@@ -34,7 +34,7 @@ async function getOrder(id) {
   }
 
   const itemsResult = await query(
-    `select id, order_id, menu_item_slug, item_name, quantity, unit_price, line_total
+    `select id, order_id, menu_item_slug, item_name, special_instructions, quantity, unit_price, line_total
      from public.order_items
      where order_id = $1
      order by created_at asc`,

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Clock, MapPin, Menu, Phone, ShoppingBag, Sparkles } from "lucide-react";
 import MobileNav from "./MobileNav";
 import { restaurantInfo } from "./site-data";
+import FloatingIconBackground from "./FloatingIconBackground";
 
 export default function RestaurantPage({ menuError, menuItems, variant }) {
   return (
@@ -23,6 +24,7 @@ export default function RestaurantPage({ menuError, menuItems, variant }) {
           
         </div>
         <div className="bold-copy">
+          <img src="/tree2.png" alt="" width={200} height={200} className="bold-copy-img" />
           <p className="eyebrow">{variant.eyebrow}</p>
           <h1>{variant.title}</h1>
           <p>{variant.copy}</p>
@@ -49,12 +51,10 @@ export default function RestaurantPage({ menuError, menuItems, variant }) {
       <section className="bold-menu" id="menu">
         <div className="menu-intro">
           <p className="eyebrow">Current Menu</p>
-          <h2>Comfort plates, sides, and signatures.</h2>
-          <p>
-            Choose from Yo&apos;s current menu, then send an order request for confirmation before pickup.
-          </p>
+
         </div>
         <div className="bold-menu-board">
+          <FloatingIconBackground opacity={0.5} />
           {menuError ? (
             <article className="menu-load-error">
               <span className="item-number">!</span>
@@ -66,16 +66,18 @@ export default function RestaurantPage({ menuError, menuItems, variant }) {
               </div>
             </article>
           ) : (
-            menuItems.map((item, index) => (
+            menuItems.splice(0, 3).map((item, index) => (
               <article key={item.name}>
                 <span className="item-number">0{index + 1}</span>
-                <h3>{item.name}</h3>
-                <p className="creole-name">{item.nameInCreole}</p>
-                <p>{item.note}</p>
-                <div>
-                  <strong>{item.tag}</strong>
-                  <em>{item.accent}</em>
-                </div>
+                  <img src={item.image} alt={item.name} width={200} height={200} />
+                  <div className="item-copy">
+                    <h4>{item.name}</h4>
+                    <p>{item.note}</p>
+                    <Link className="menu-order-link" href={`/order/${item.slug}`}>
+                      Order now
+                      <ArrowRight size={16} />
+                    </Link>
+                  </div>
               </article>
             ))
           )}

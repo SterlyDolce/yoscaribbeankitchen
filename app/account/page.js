@@ -57,7 +57,7 @@ async function getRecentOrders(userId) {
   }
 
   const itemsResult = await query(
-    `select order_id, item_name, quantity, line_total
+    `select order_id, item_name, special_instructions, quantity, line_total
      from public.order_items
      where order_id = any($1::uuid[])
      order by created_at asc`,
@@ -70,6 +70,7 @@ async function getRecentOrders(userId) {
     currentItems.push({
       lineTotal: item.line_total,
       name: item.item_name,
+      instructions: item.special_instructions,
       quantity: item.quantity
     });
     itemsByOrderId.set(item.order_id, currentItems);
@@ -186,9 +187,10 @@ export default async function AccountPage() {
                     </div>
                     {order.delivery_address && <p className="order-address">{order.delivery_address}</p>}
                     <ul>
-                      {order.items.map((item) => (
-                        <li key={`${order.id}-${item.name}`}>
+                      {order.items.map((item, index) => (
+                        <li key={`${order.id}-${item.name}-${index}`}>
                           <span>{item.quantity} x {item.name}</span>
+                          {item.instructions && <small>{item.instructions}</small>}
                           <strong>{formatter.format(Number(item.lineTotal))}</strong>
                         </li>
                       ))}

@@ -77,6 +77,7 @@ create table if not exists public.order_items (
   menu_item_id uuid references public.menu_items(id),
   menu_item_slug text not null,
   item_name text not null,
+  special_instructions text,
   quantity integer not null check (quantity > 0),
   unit_price numeric(10, 2) not null check (unit_price >= 0),
   line_total numeric(10, 2) not null check (line_total >= 0),
@@ -84,6 +85,42 @@ create table if not exists public.order_items (
 );
 
 create index if not exists order_items_order_id_idx on public.order_items (order_id);
+
+alter table public.order_items add column if not exists special_instructions text;
+
+create table if not exists public.menu_item_option_groups (
+  id uuid primary key default gen_random_uuid(),
+  menu_item_id uuid not null references public.menu_items(id) on delete cascade,
+  slug text not null,
+  name text not null,
+  min_selections integer not null default 0 check (min_selections >= 0),
+  max_selections integer not null default 1 check (max_selections > 0),
+  display_order integer not null default 0,
+  available boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (menu_item_id, slug),
+  check (max_selections >= min_selections)
+);
+
+create table if not exists public.menu_item_options (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references public.menu_item_option_groups(id) on delete cascade,
+  slug text not null,
+  name text not null,
+  price_adjustment numeric(10, 2) not null default 0,
+  display_order integer not null default 0,
+  available boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (group_id, slug)
+);
+
+create index if not exists menu_item_option_groups_menu_item_idx
+on public.menu_item_option_groups (menu_item_id, display_order);
+
+create index if not exists menu_item_options_group_idx
+on public.menu_item_options (group_id, display_order);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -108,6 +145,16 @@ for each row execute function public.set_updated_at();
 drop trigger if exists set_orders_updated_at on public.orders;
 create trigger set_orders_updated_at
 before update on public.orders
+for each row execute function public.set_updated_at();
+
+drop trigger if exists set_menu_item_option_groups_updated_at on public.menu_item_option_groups;
+create trigger set_menu_item_option_groups_updated_at
+before update on public.menu_item_option_groups
+for each row execute function public.set_updated_at();
+
+drop trigger if exists set_menu_item_options_updated_at on public.menu_item_options;
+create trigger set_menu_item_options_updated_at
+before update on public.menu_item_options
 for each row execute function public.set_updated_at();
 
 insert into public.menu_items (

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../db";
+import { getMenuItem } from "../../menu-data";
+import { formatMenuItemSelections, validateMenuItemSelections } from "../../menu-customizations";
 import { getUserForSessionToken, sessionCookieName } from "../../session";
 
 const taxRate = 0.07;
@@ -54,7 +56,9 @@ export async function POST(request) {
 
   const requestedItems = items
     .map((item) => ({
+      instructions: String(item.instructions || "").trim().slice(0, 300),
       quantity: Number.parseInt(item.quantity, 10),
+      selections: item.selections && typeof item.selections === "object" ? item.selections : {},
       slug: String(item.slug || "")
     }))
     .filter((item) => item.slug && Number.isInteger(item.quantity) && item.quantity > 0);
@@ -66,14 +70,7 @@ export async function POST(request) {
   const menuBySlug = new Map();
 
   for (const requestedItem of requestedItems) {
-    const menuResult = await query(
-      `select id, slug, name, price
-       from public.menu_items
-       where available = true and slug = $1
-       limit 1`,
-      [requestedItem.slug]
-    );
-    const menuItem = menuResult.rows[0];
+    const menuItem = await getMenuItem(requestedItem.slug);
 
     if (menuItem) {
       menuBySlug.set(menuItem.slug, menuItem);
@@ -84,18 +81,32 @@ export async function POST(request) {
     return NextResponse.json({ message: "One or more menu items are no longer available." }, { status: 400 });
   }
 
-  const orderLines = requestedItems.map((requestedItem) => {
-    const menuItem = menuBySlug.get(requestedItem.slug);
-    const unitPrice = Number(menuItem.price);
-    const lineTotal = money(unitPrice * requestedItem.quantity);
+  const orderLines = [];
 
-    return {
+  for (const requestedItem of requestedItems) {
+    const menuItem = menuBySlug.get(requestedItem.slug);
+    const selectionResult = validateMenuItemSelections(menuItem, requestedItem.selections);
+
+    if (!selectionResult.valid) {
+      return NextResponse.json({ message: selectionResult.message }, { status: 400 });
+    }
+
+    const unitPrice = Number(menuItem.price) + selectionResult.priceAdjustment;
+    const lineTotal = money(unitPrice * requestedItem.quantity);
+    const mealSelections = formatMenuItemSelections(menuItem, selectionResult.selections);
+    const instructions = [mealSelections, requestedItem.instructions]
+      .filter(Boolean)
+      .join("; ")
+      .slice(0, 600);
+
+    orderLines.push({
+      instructions,
       lineTotal,
       menuItem,
       quantity: requestedItem.quantity,
       unitPrice
-    };
-  });
+    });
+  }
   const subtotal = money(orderLines.reduce((total, line) => total + line.lineTotal, 0));
   const tax = money(subtotal * taxRate);
   const total = money(subtotal + tax);
@@ -112,13 +123,14 @@ export async function POST(request) {
     for (const line of orderLines) {
       await query(
         `insert into public.order_items
-          (order_id, menu_item_id, menu_item_slug, item_name, quantity, unit_price, line_total)
-         values ($1, $2, $3, $4, $5, $6, $7)`,
+          (order_id, menu_item_id, menu_item_slug, item_name, special_instructions, quantity, unit_price, line_total)
+         values ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
           order.id,
           line.menuItem.id,
           line.menuItem.slug,
           line.menuItem.name,
+          line.instructions || null,
           line.quantity,
           line.unitPrice,
           line.lineTotal

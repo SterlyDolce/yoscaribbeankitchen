@@ -45,6 +45,7 @@ export function serializeOrder(row, items = []) {
 export function serializeOrderItem(row) {
   return {
     id: row.id,
+    instructions: row.special_instructions,
     itemName: row.item_name,
     lineTotal: Number(row.line_total),
     menuItemSlug: row.menu_item_slug,
@@ -74,6 +75,7 @@ export function buildReceipt(order) {
     lines.push(
       `${item.quantity} x ${item.itemName} @ ${formatter.format(item.unitPrice)} = ${formatter.format(item.lineTotal)}`
     );
+    if (item.instructions) lines.push(`  Instructions: ${item.instructions}`);
   }
 
   lines.push(
