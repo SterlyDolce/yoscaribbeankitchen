@@ -102,8 +102,8 @@ export default function OrderForm({ menuItems, user }) {
     0
   );
 
-  const serviceFee = 1.75;
-  const deliveryFee = orderMode === "Delivery" ? 1.25 : 0;
+  const serviceFee = totalItems > 0 ? 1.75 : 0;
+  const deliveryFee = totalItems > 0 && orderMode === "Delivery" ? 1.25 : 0;
   const tax = subtotal * 0.07;
   const total = serviceFee + deliveryFee + subtotal + tax;
   const ticketSummary = `${totalItems} ${totalItems === 1 ? "item" : "items"}`;
