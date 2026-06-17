@@ -1,4 +1,5 @@
 export function getMenuItemCustomization(item) {
+
   const groups = Array.isArray(item.customizationGroups) ? item.customizationGroups : [];
   return groups.length > 0 ? { groups } : null;
 }
@@ -10,6 +11,7 @@ export function requiresMealOptions(item) {
 
 export function validateMenuItemSelections(item, selections = {}) {
   const customization = getMenuItemCustomization(item);
+
 
   if (!customization) {
     return requiresMealOptions(item)
@@ -41,6 +43,7 @@ export function validateMenuItemSelections(item, selections = {}) {
 }
 
 export function formatMenuItemSelections(item, selections = {}) {
+  console.log("formatMenuItemSelections called with item:", item, "selections:", selections); // --- DEBUG ---
   const customization = getMenuItemCustomization(item);
   if (!customization) return "";
 

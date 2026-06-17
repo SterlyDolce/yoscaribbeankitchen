@@ -215,77 +215,80 @@ export default function OrderForm({ menuItems, user }) {
           ))}
         </div>
       </div>
+      {totalItems != 0 && (
 
-      <aside className={collapsed ? "pos-ticket is-collapsed" : "pos-ticket is-expanded"}>
-        <div className="pos-ticket-header">
-          <button aria-controls="order-ticket-body" aria-expanded={!collapsed} className="ticket-toggle" onClick={toggleTicket} type="button">
-            <span>
-              <p className="eyebrow">{orderMode}</p>
-              <h2>{collapsed ? formatter.format(total) : "Your bag"}</h2>
-              <small>{collapsed ? ticketSummary : "Review and send"}</small>
-            </span>
-            {collapsed ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
-          </button>
-          <button className="clear-ticket-button" disabled={totalItems === 0} onClick={clearTicket} type="button">Clear</button>
-        </div>
 
-        <div className="ticket-body" id="order-ticket-body">
-          <div className={collapsed ? "ticket-lines is-collapsed" : "ticket-lines is-expanded"} aria-label="Order summary">
-            {bagLines.length === 0 ? (
-              <div className="empty-ticket"><ShoppingBag size={34} /><p>Your bag is empty.</p></div>
-            ) : bagLines.map((line) => (
-              <div className="ticket-line" key={`${line.slug}-${line.lineIndex}`}>
-                <div>
-                  <strong>{line.item.name}</strong>
-                  <span>{line.quantity} x {formatter.format(getMenuItemUnitPrice(line.item, line.selections))}</span>
-                  {formatMenuItemSelections(line.item, line.selections) && (
-                    <small>{formatMenuItemSelections(line.item, line.selections)}</small>
-                  )}
-                  {line.instructions && <small>{line.instructions}</small>}
-                  <Link className="ticket-edit-link" href={`/order/${line.slug}`}>Customize another</Link>
+        <aside className={collapsed ? "pos-ticket is-collapsed" : "pos-ticket is-expanded"}>
+          <div className="pos-ticket-header">
+            <button aria-controls="order-ticket-body" aria-expanded={!collapsed} className="ticket-toggle" onClick={toggleTicket} type="button">
+              <span>
+                <p className="eyebrow">{orderMode}</p>
+                <h2>{collapsed ? formatter.format(total) : "Your bag"}</h2>
+                <small>{collapsed ? ticketSummary : "Review and send"}</small>
+              </span>
+              {collapsed ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
+            </button>
+            <button className="clear-ticket-button" disabled={totalItems === 0} onClick={clearTicket} type="button">Clear</button>
+          </div>
+
+          <div className="ticket-body" id="order-ticket-body">
+            <div className={collapsed ? "ticket-lines is-collapsed" : "ticket-lines is-expanded"} aria-label="Order summary">
+              {bagLines.length === 0 ? (
+                <div className="empty-ticket"><ShoppingBag size={34} /><p>Your bag is empty.</p></div>
+              ) : bagLines.map((line) => (
+                <div className="ticket-line" key={`${line.slug}-${line.lineIndex}`}>
+                  <div>
+                    <strong>{line.item.name}</strong>
+                    <span>{line.quantity} x {formatter.format(getMenuItemUnitPrice(line.item, line.selections))}</span>
+                    {formatMenuItemSelections(line.item, line.selections) && (
+                      <small>{formatMenuItemSelections(line.item, line.selections)}</small>
+                    )}
+                    {line.instructions && <small>{line.instructions}</small>}
+                    <Link className="ticket-edit-link" href={`/order/${line.slug}`}>Customize another</Link>
+                  </div>
+                  <div className="ticket-line-actions">
+                    <b>{formatter.format(line.quantity * getMenuItemUnitPrice(line.item, line.selections))}</b>
+                    <button aria-label={`Remove ${line.item.name}`} onClick={() => removeLine(line.lineIndex)} type="button">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
-                <div className="ticket-line-actions">
-                  <b>{formatter.format(line.quantity * getMenuItemUnitPrice(line.item, line.selections))}</b>
-                  <button aria-label={`Remove ${line.item.name}`} onClick={() => removeLine(line.lineIndex)} type="button">
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="payment-switch" aria-label="Payment preference">
-            {["Pay in person", "Pay online"].map((type) => (
-              <button className={paymentType === type ? "active" : ""} key={type} onClick={() => setPaymentType(type)} type="button">{type}</button>
-            ))}
-          </div>
+            <div className="payment-switch" aria-label="Payment preference">
+              {["Pay in person", "Pay online"].map((type) => (
+                <button className={paymentType === type ? "active" : ""} key={type} onClick={() => setPaymentType(type)} type="button">{type}</button>
+              ))}
+            </div>
 
-          <div className="ticket-total" aria-label="Order total">
-            <span>Items<strong>{totalItems}</strong></span>
-            <span>Subtotal<strong>{formatter.format(subtotal)}</strong></span>
-            <span>Tax<strong>{formatter.format(tax)}</strong></span>
-            <span>Service Fee<strong>{formatter.format(serviceFee)}</strong></span>
-            <span>Delivery Fee<strong>{formatter.format(deliveryFee)}</strong></span>
-            <span className="grand-total">Total<strong>{formatter.format(total)}</strong></span>
-          </div>
+            <div className="ticket-total" aria-label="Order total">
+              <span>Items<strong>{totalItems}</strong></span>
+              <span>Subtotal<strong>{formatter.format(subtotal)}</strong></span>
+              <span>Tax<strong>{formatter.format(tax)}</strong></span>
+              <span>Service Fee<strong>{formatter.format(serviceFee)}</strong></span>
+              <span>Delivery Fee<strong>{formatter.format(deliveryFee)}</strong></span>
+              <span className="grand-total">Total<strong>{formatter.format(total)}</strong></span>
+            </div>
 
-          {user ? (
-            needsDeliveryAddress ? (
-              <Link href="/account"><LockKeyhole size={18} />Add delivery address</Link>
+            {user ? (
+              needsDeliveryAddress ? (
+                <Link href="/account"><LockKeyhole size={18} />Add delivery address</Link>
+              ) : (
+                <button className="place-order-button" disabled={totalItems === 0 || submitting} onClick={placeOrder} type="button">
+                  <CheckCircle2 size={18} />{submitting ? "Sending order..." : "Place order"}
+                </button>
+              )
             ) : (
-              <button className="place-order-button" disabled={totalItems === 0 || submitting} onClick={placeOrder} type="button">
-                <CheckCircle2 size={18} />{submitting ? "Sending order..." : "Place order"}
-              </button>
-            )
-          ) : (
-            <Link className={totalItems === 0 ? "disabled-link" : ""} href="/auth"><LockKeyhole size={18} />Sign in to continue</Link>
-          )}
-          {user && <small>Ordering as {user.email}</small>}
-          {orderMode === "Delivery" && hasDeliveryAddress && <small>Delivery to {user.addressLine1}, {user.city}</small>}
-          <small>Payment preference: {paymentType}</small>
-          {status && <p className={`form-status ${status.kind}`} role="status">{status.message}</p>}
-        </div>
-      </aside>
+              <Link className={totalItems === 0 ? "disabled-link" : ""} href="/auth"><LockKeyhole size={18} />Sign in to continue</Link>
+            )}
+            {user && <small>Ordering as {user.email}</small>}
+            {orderMode === "Delivery" && hasDeliveryAddress && <small>Delivery to {user.addressLine1}, {user.city}</small>}
+            <small>Payment preference: {paymentType}</small>
+            {status && <p className={`form-status ${status.kind}`} role="status">{status.message}</p>}
+          </div>
+        </aside>
+      )}
     </section>
   );
 }

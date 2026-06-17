@@ -52,6 +52,7 @@ export async function GET(request) {
   }
 
   const itemsResult = await query(
+    //special_instructions
     `select id, order_id, menu_item_slug, item_name, special_instructions, quantity, unit_price, line_total
      from public.order_items
      where order_id = any($1::uuid[])

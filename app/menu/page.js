@@ -34,15 +34,18 @@ export default async function MenuPage() {
       </header>
 
       <section className="page-hero menu-page-hero">
-        <p className="eyebrow">Menu</p>
-        <h1>Haitian comfort food.</h1>
-        <p>
-          Browse the current Yo&apos;s menu, then build an online order request for pickup confirmation.
-        </p>
-        <Link className="primary" href="/order">
-          Start order
+        <div>
+          <p className="eyebrow">Menu</p>
+          <h1>Kremas</h1>
+          <b>Only For $4.29</b>
+          <p>Our signature dish, a rich and creamy Haitian stew infused with aromatic spices and fresh ingredients.</p>
+        <Link className="primary" href="/order/cremasse" aria-label="Start an order for Cremasse">
+          Order Now
           <ArrowRight size={18} />
         </Link>
+        </div>
+        
+        <Image src="/kremas.png" className="menu-hero-image" alt="A spread of Yo's Caribbean Kitchen dishes" width={500} height={500} priority />
       </section>
 
       <section className="full-menu-list">
@@ -77,14 +80,7 @@ export default async function MenuPage() {
           <p className="eyebrow">Kitchen Notes</p>
           <h2>More favorites are in rotation.</h2>
         </div>
-        <div className="coming-grid">
-          {comingSoon.map((item) => (
-            <span key={item}>
-              <Sparkles size={18} />
-              {item}
-            </span>
-          ))}
-        </div>
+        
       </section>
     </main>
   );
