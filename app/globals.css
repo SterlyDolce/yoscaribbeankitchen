@@ -252,6 +252,253 @@ h3 {
   padding: 8px 12px;
 }
 
+.app-home-site {
+  background: #f7efe2;
+}
+
+.app-home-screen {
+  background:
+    radial-gradient(circle at 18% 5%, rgba(244, 180, 0, 0.28), transparent 26%),
+    linear-gradient(180deg, #fff4d8 0%, #f7efe2 42%, #fffdf8 100%);
+  color: var(--black);
+  display: grid;
+  gap: 18px;
+  min-height: 100dvh;
+  padding: calc(18px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+}
+
+.app-home-top {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.app-home-top div {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  flex: 1;
+}
+
+.app-home-top div:first-child {
+  justify-content: flex-start;
+}
+.app-home-top div:last-child {
+  justify-content: flex-end;
+}
+
+.app-home-top-button {
+  align-items: center;
+  background: var(--red);
+  border: 0;
+  border-radius: 999px;
+  color: var(--white);
+  display: inline-flex;
+  font-size: 0.74rem;
+  font-weight: 950;
+  gap: 6px;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+}
+
+.app-home-top p {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-weight: 850;
+  margin: 0 0 3px;
+}
+
+.app-home-top strong {
+  font-size: 1.35rem;
+  font-weight: 950;
+}
+
+.app-home-top img {
+  height: 32px;
+  object-fit: contain;
+  width: auto;
+  /* width: 58px; */
+}
+
+.app-hero-card {
+  background:
+    radial-gradient(circle at 82% 28%, rgba(244, 180, 0, 0.34), transparent 38%),
+    linear-gradient(135deg, var(--black), #3a1d18 58%, var(--red));
+  border-radius: 30px;
+  color: var(--white);
+  overflow: hidden;
+  padding: 26px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.app-hero-copy {
+  max-width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.app-hero-copy span {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: var(--gold);
+  display: inline-flex;
+  font-size: 0.5rem;
+  font-weight: 950;
+  gap: 7px;
+  margin-bottom: 18px;
+  padding: 9px 11px;
+}
+
+.app-hero-copy h2 {
+  font-size: 5vw;
+  /* line-height: 0.86; */
+  margin-bottom: 14px;
+}
+
+.app-hero-copy p {
+  color: rgba(255, 253, 248, 0.84);
+  font-size: 0.98rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.app-hero-card > img {
+  height: auto;
+  object-fit: contain;
+  width: 100%;
+}
+
+.app-action-panel {
+  background: var(--white);
+  border: 1px solid rgba(22, 21, 20, 0.08);
+  border-radius: 26px;
+  box-shadow: 0 18px 44px rgba(22, 21, 20, 0.08);
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.app-home-logo {
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.18));
+}
+
+.app-home-primary {
+  align-items: center;
+  background: var(--gold);
+  border-radius: 16px;
+  color: var(--black);
+  display: inline-flex;
+  font-weight: 950;
+  gap: 10px;
+  justify-content: center;
+  padding: 8px 18px;
+}
+
+.app-home-shortcuts {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.app-home-shortcuts a {
+  align-items: center;
+  background: #f7efe2;
+  border: 1px solid rgba(22, 21, 20, 0.08);
+  border-radius: 16px;
+  color: var(--black);
+  display: grid;
+  font-size: 0.82rem;
+  font-weight: 950;
+  gap: 7px;
+  justify-items: center;
+  min-height: 82px;
+}
+
+.app-home-shortcuts svg,
+.app-home-status svg {
+  color: var(--red);
+}
+
+.app-home-status {
+  align-items: center;
+  background: rgba(244, 180, 0, 0.2);
+  border-radius: 999px;
+  color: var(--black);
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 900;
+  gap: 8px;
+  padding: 12px 14px;
+  width: fit-content;
+}
+
+.app-featured {
+  display: grid;
+  gap: 12px;
+}
+
+.app-section-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.app-section-heading h2 {
+  color: var(--black);
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.app-section-heading a {
+  color: var(--red);
+  font-size: 0.86rem;
+  font-weight: 950;
+}
+
+.app-dish-rail {
+  display: grid;
+  gap: 12px;
+  grid-auto-columns: minmax(145px, 42vw);
+  grid-auto-flow: column;
+  margin-left: -16px;
+  margin-right: -16px;
+  overflow-x: auto;
+  padding: 0 16px 6px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.app-dish-card {
+  background: var(--white);
+  border: 1px solid rgba(22, 21, 20, 0.08);
+  border-radius: 22px;
+  box-shadow: 0 14px 30px rgba(22, 21, 20, 0.07);
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  scroll-snap-align: start;
+}
+
+.app-dish-card img {
+  height: 116px;
+  object-fit: contain;
+  width: 100%;
+}
+
+.app-dish-card strong {
+  font-size: 1rem;
+}
+
+.app-dish-card span {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -2471,9 +2718,108 @@ h3 {
       border-radius: 28px 28px 0 0;
   }
 
-  .modal-customize-back-link {
+.modal-customize-back-link {
     top: 12px;
     left: 12px;
     padding: 10px;
   }
+}
+
+.app-install-site {
+  align-items: center;
+  background:
+    radial-gradient(circle at 16% 8%, rgba(244, 180, 0, 0.24), transparent 32%),
+    linear-gradient(155deg, var(--black), #3a1d18 56%, var(--red));
+  color: var(--white);
+  display: flex;
+  min-height: 100dvh;
+  padding: calc(28px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));
+}
+
+.app-install-card {
+  background: rgba(255, 253, 248, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 30px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+  display: grid;
+  margin: 0 auto;
+  max-width: 560px;
+  padding: clamp(24px, 7vw, 46px);
+  width: 100%;
+}
+
+.app-install-card > img {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  height: 96px;
+  margin-bottom: 24px;
+  object-fit: contain;
+  padding: 8px;
+  width: 96px;
+}
+
+.app-install-card h1 {
+  font-size: clamp(3rem, 12vw, 5.5rem);
+  margin-bottom: 16px;
+}
+
+.app-install-copy {
+  color: rgba(255, 253, 248, 0.82);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.app-device-pill {
+  align-items: center;
+  background: rgba(244, 180, 0, 0.18);
+  border: 1px solid rgba(244, 180, 0, 0.32);
+  border-radius: 999px;
+  color: var(--gold);
+  display: inline-flex;
+  font-weight: 950;
+  gap: 8px;
+  margin: 8px 0 18px;
+  padding: 10px 13px;
+  width: fit-content;
+}
+
+.app-install-steps {
+  counter-reset: install-step;
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.app-install-steps li {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  color: rgba(255, 253, 248, 0.9);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  line-height: 1.4;
+  padding: 12px;
+}
+
+.app-install-steps li::before {
+  align-items: center;
+  background: var(--gold);
+  border-radius: 999px;
+  color: var(--black);
+  content: counter(install-step);
+  counter-increment: install-step;
+  display: inline-flex;
+  font-weight: 950;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.app-install-actions {
+  display: grid;
+  margin-top: 22px;
 }
