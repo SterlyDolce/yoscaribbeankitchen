@@ -6,7 +6,7 @@ import { parseMenuPayload, serializeMenuItem } from "../menu-admin";
 export const dynamic = "force-dynamic";
 
 export async function PATCH(request, { params }) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
 
   try {
@@ -65,7 +65,7 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
 
   const { slug } = await params;

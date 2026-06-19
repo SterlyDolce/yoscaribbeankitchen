@@ -7,7 +7,7 @@ import { serializeOrder, serializeOrderItem } from "./orders-admin";
 export const dynamic = "force-dynamic";
 
 export async function GET(request) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
   await ensureOrderPaymentTracking();
 

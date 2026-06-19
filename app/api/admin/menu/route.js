@@ -6,7 +6,7 @@ import { parseMenuPayload, serializeMenuItem } from "./menu-admin";
 export const dynamic = "force-dynamic";
 
 export async function GET(request) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
 
   const includeUnavailable = new URL(request.url).searchParams.get("includeUnavailable") === "true";
@@ -21,7 +21,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
 
   try {
