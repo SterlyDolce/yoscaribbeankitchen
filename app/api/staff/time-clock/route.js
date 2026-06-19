@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../../db";
+import { isEmployeeId, normalizeEmployeeId } from "../../../employee-ids";
 import { ensurePayrollSchema } from "../../../payroll-schema";
 import { getStaffUserForRequest } from "../../admin/admin-auth";
 
@@ -64,7 +65,16 @@ export async function POST(request) {
 
   const body = await request.json();
   const action = String(body.action || "").trim().toLowerCase();
+  const employeeId = normalizeEmployeeId(body.employeeId);
   const note = String(body.note || "").trim() || null;
+
+  if (!isEmployeeId(employeeId)) {
+    return NextResponse.json({ message: "Enter your 6-digit employee ID." }, { status: 400 });
+  }
+
+  if (employeeId !== user.employeeId) {
+    return NextResponse.json({ message: "Employee ID does not match this staff account." }, { status: 403 });
+  }
 
   if (action === "clock_in") {
     try {
