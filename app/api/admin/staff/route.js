@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../../db";
+import { isEmployeeId, normalizeEmployeeId } from "../../../employee-ids";
 import { hashPassword } from "../../../passwords";
 import { ensureStaffPositionSchema } from "../../../staff-schema";
 import { normalizeStaffPosition } from "../../../staff-positions";
@@ -53,7 +54,7 @@ export async function POST(request) {
   const body = await request.json();
   const fullName = body.fullName?.trim();
   const email = body.email?.trim().toLowerCase();
-  const employeeId = body.employeeId?.trim().toLowerCase();
+  const employeeId = normalizeEmployeeId(body.employeeId);
   const phone = body.phone?.trim() || null;
   const password = body.password;
   const role = body.role?.trim().toLowerCase() || "staff";
@@ -67,6 +68,10 @@ export async function POST(request) {
 
   if (!staffRoles.has(role)) {
     return NextResponse.json({ message: "Role must be staff or admin." }, { status: 400 });
+  }
+
+  if (!isEmployeeId(employeeId)) {
+    return NextResponse.json({ message: "Employee ID must be 6 numbers." }, { status: 400 });
   }
 
   try {

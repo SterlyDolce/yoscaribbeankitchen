@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../../../db";
+import { isEmployeeId, normalizeEmployeeId } from "../../../../employee-ids";
 import { hashPassword } from "../../../../passwords";
 import { ensureStaffPositionSchema } from "../../../../staff-schema";
 import { normalizeStaffPosition } from "../../../../staff-positions";
@@ -64,10 +65,10 @@ export async function PATCH(request, { params }) {
   }
 
   if (body.employeeId !== undefined) {
-    const employeeId = String(body.employeeId || "").trim().toLowerCase();
+    const employeeId = normalizeEmployeeId(body.employeeId);
 
-    if (!employeeId) {
-      return NextResponse.json({ message: "Employee ID is required." }, { status: 400 });
+    if (!isEmployeeId(employeeId)) {
+      return NextResponse.json({ message: "Employee ID must be 6 numbers." }, { status: 400 });
     }
 
     values.push(employeeId);

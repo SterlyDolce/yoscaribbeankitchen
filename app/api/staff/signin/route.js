@@ -4,6 +4,7 @@ import { verifyPassword } from "../../../passwords";
 import { createSessionToken } from "../../../session";
 import { ensureStaffPositionSchema } from "../../../staff-schema";
 import { normalizeStaffPosition } from "../../../staff-positions";
+import { isEmployeeId, normalizeEmployeeId } from "../../../employee-ids";
 
 export async function POST(request) {
   if (!hasDatabaseConfig()) {
@@ -11,11 +12,15 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const employeeId = body.employeeId?.trim().toLowerCase();
+  const employeeId = normalizeEmployeeId(body.employeeId);
   const password = body.password;
 
   if (!employeeId || !password) {
     return NextResponse.json({ message: "Employee ID and password are required." }, { status: 400 });
+  }
+
+  if (!isEmployeeId(employeeId)) {
+    return NextResponse.json({ message: "Employee ID must be 6 numbers." }, { status: 400 });
   }
 
   try {
@@ -24,7 +29,7 @@ export async function POST(request) {
     const result = await query(
       `select id, full_name, email, employee_id, phone, role, staff_position, password_hash
        from public.users
-       where lower(employee_id) = $1
+       where employee_id = $1
        limit 1`,
       [employeeId]
     );
