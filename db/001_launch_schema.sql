@@ -5,6 +5,7 @@ create table if not exists public.users (
   full_name text not null,
   email text not null,
   phone text,
+  employee_id text,
   password_hash text,
   role text not null default 'customer',
   staff_position text,
@@ -14,6 +15,7 @@ create table if not exists public.users (
 
 alter table public.users add column if not exists password_hash text;
 alter table public.users add column if not exists role text not null default 'customer';
+alter table public.users add column if not exists employee_id text;
 alter table public.users add column if not exists staff_position text;
 alter table public.users add column if not exists address_line1 text;
 alter table public.users add column if not exists address_line2 text;
@@ -23,6 +25,7 @@ alter table public.users add column if not exists postal_code text;
 alter table public.users add column if not exists delivery_notes text;
 
 create unique index if not exists users_email_lower_key on public.users (lower(email));
+create unique index if not exists users_employee_id_lower_key on public.users (lower(employee_id)) where employee_id is not null;
 
 create table if not exists public.menu_items (
   id uuid primary key default gen_random_uuid(),

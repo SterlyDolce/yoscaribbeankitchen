@@ -11,6 +11,7 @@ function serializeStaff(row) {
   return {
     createdAt: row.created_at,
     email: row.email,
+    employeeId: row.employee_id,
     fullName: row.full_name,
     id: row.id,
     phone: row.phone,
@@ -30,7 +31,7 @@ export async function GET(request) {
   await ensureStaffPositionSchema();
 
   const result = await query(
-    `select id, full_name, email, phone, role, staff_position, created_at
+    `select id, full_name, email, employee_id, phone, role, staff_position, created_at
      from public.users
      where role in ('admin', 'staff')
      order by created_at desc`
@@ -52,6 +53,7 @@ export async function POST(request) {
   const body = await request.json();
   const fullName = body.fullName?.trim();
   const email = body.email?.trim().toLowerCase();
+  const employeeId = body.employeeId?.trim().toLowerCase();
   const phone = body.phone?.trim() || null;
   const password = body.password;
   const role = body.role?.trim().toLowerCase() || "staff";
@@ -59,8 +61,8 @@ export async function POST(request) {
     ? normalizeStaffPosition(body.staffPosition, "manager")
     : normalizeStaffPosition(body.staffPosition, "front");
 
-  if (!fullName || !email || !password) {
-    return NextResponse.json({ message: "Full name, email, and password are required." }, { status: 400 });
+  if (!fullName || !email || !employeeId || !password) {
+    return NextResponse.json({ message: "Full name, email, employee ID, and password are required." }, { status: 400 });
   }
 
   if (!staffRoles.has(role)) {
@@ -69,16 +71,16 @@ export async function POST(request) {
 
   try {
     const result = await query(
-      `insert into public.users (full_name, email, phone, password_hash, role, staff_position)
-       values ($1, $2, $3, $4, $5, $6)
-       returning id, full_name, email, phone, role, staff_position, created_at`,
-      [fullName, email, phone, hashPassword(password), role, staffPosition]
+      `insert into public.users (full_name, email, employee_id, phone, password_hash, role, staff_position)
+       values ($1, $2, $3, $4, $5, $6, $7)
+       returning id, full_name, email, employee_id, phone, role, staff_position, created_at`,
+      [fullName, email, employeeId, phone, hashPassword(password), role, staffPosition]
     );
 
     return NextResponse.json({ staff: serializeStaff(result.rows[0]) }, { status: 201 });
   } catch (error) {
     if (error.code === "23505") {
-      return NextResponse.json({ message: "An account already exists for that email." }, { status: 409 });
+      return NextResponse.json({ message: "An account already exists for that email or employee ID." }, { status: 409 });
     }
 
     console.error("Failed to create staff account.", error);

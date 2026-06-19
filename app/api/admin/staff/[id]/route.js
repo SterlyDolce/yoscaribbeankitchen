@@ -11,6 +11,7 @@ function serializeStaff(row) {
   return {
     createdAt: row.created_at,
     email: row.email,
+    employeeId: row.employee_id,
     fullName: row.full_name,
     id: row.id,
     phone: row.phone,
@@ -62,6 +63,17 @@ export async function PATCH(request, { params }) {
     fields.push(`email = $${values.length}`);
   }
 
+  if (body.employeeId !== undefined) {
+    const employeeId = String(body.employeeId || "").trim().toLowerCase();
+
+    if (!employeeId) {
+      return NextResponse.json({ message: "Employee ID is required." }, { status: 400 });
+    }
+
+    values.push(employeeId);
+    fields.push(`employee_id = $${values.length}`);
+  }
+
   if (body.phone !== undefined) {
     values.push(String(body.phone || "").trim() || null);
     fields.push(`phone = $${values.length}`);
@@ -109,7 +121,7 @@ export async function PATCH(request, { params }) {
       `update public.users
        set ${fields.join(", ")}
        where id = $${values.length}
-       returning id, full_name, email, phone, role, staff_position, created_at`,
+       returning id, full_name, email, employee_id, phone, role, staff_position, created_at`,
       values
     );
 
@@ -120,7 +132,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ staff: serializeStaff(result.rows[0]) });
   } catch (error) {
     if (error.code === "23505") {
-      return NextResponse.json({ message: "An account already exists for that email." }, { status: 409 });
+      return NextResponse.json({ message: "An account already exists for that email or employee ID." }, { status: 409 });
     }
 
     console.error("Failed to update staff account.", error);

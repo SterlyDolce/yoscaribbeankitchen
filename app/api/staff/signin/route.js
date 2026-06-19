@@ -11,27 +11,27 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const email = body.email?.trim().toLowerCase();
+  const employeeId = body.employeeId?.trim().toLowerCase();
   const password = body.password;
 
-  if (!email || !password) {
-    return NextResponse.json({ message: "Email and password are required." }, { status: 400 });
+  if (!employeeId || !password) {
+    return NextResponse.json({ message: "Employee ID and password are required." }, { status: 400 });
   }
 
   try {
     await ensureStaffPositionSchema();
 
     const result = await query(
-      `select id, full_name, email, phone, role, staff_position, password_hash
+      `select id, full_name, email, employee_id, phone, role, staff_position, password_hash
        from public.users
-       where lower(email) = $1
+       where lower(employee_id) = $1
        limit 1`,
-      [email]
+      [employeeId]
     );
     const user = result.rows[0];
 
     if (!user || !verifyPassword(password, user.password_hash)) {
-      return NextResponse.json({ message: "Invalid email or password." }, { status: 401 });
+      return NextResponse.json({ message: "Invalid employee ID or password." }, { status: 401 });
     }
 
     if (!["admin", "staff"].includes(user.role)) {
@@ -46,6 +46,7 @@ export async function POST(request) {
       expiresAt: session.expiresAt,
       user: {
         email: user.email,
+        employeeId: user.employee_id,
         fullName: user.full_name,
         id: user.id,
         phone: user.phone,
