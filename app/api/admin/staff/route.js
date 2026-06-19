@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../../db";
 import { isEmployeeId, normalizeEmployeeId } from "../../../employee-ids";
 import { hashPassword } from "../../../passwords";
+import { ensurePayrollSchema } from "../../../payroll-schema";
 import { ensureStaffPositionSchema } from "../../../staff-schema";
 import { normalizeStaffPosition } from "../../../staff-positions";
 import { getStaffUserForRequest, requireAdminKey } from "../admin-auth";
@@ -24,6 +25,7 @@ function serializeStaff(row) {
     email: row.email,
     employeeId: row.employee_id,
     fullName: row.full_name,
+    hourlyRate: Number(row.hourly_rate || 0),
     id: row.id,
     phone: row.phone,
     role: row.role,
@@ -40,9 +42,10 @@ export async function GET(request) {
   }
 
   await ensureStaffPositionSchema();
+  await ensurePayrollSchema();
 
   const result = await query(
-    `select id, full_name, email, employee_id, phone, role, staff_position, created_at
+    `select id, full_name, email, employee_id, hourly_rate, phone, role, staff_position, created_at
      from public.users
      where role in ('admin', 'staff')
      order by created_at desc`
@@ -60,12 +63,14 @@ export async function POST(request) {
   }
 
   await ensureStaffPositionSchema();
+  await ensurePayrollSchema();
 
   const body = await request.json();
   const fullName = body.fullName?.trim();
   const email = body.email?.trim().toLowerCase();
   const employeeId = normalizeEmployeeId(body.employeeId);
   const phone = body.phone?.trim() || null;
+  const hourlyRate = Number(body.hourlyRate || 0);
   const password = body.password;
   const role = body.role?.trim().toLowerCase() || "staff";
   const staffPosition = role === "admin"
@@ -84,12 +89,16 @@ export async function POST(request) {
     return NextResponse.json({ message: "Employee ID must be 6 numbers." }, { status: 400 });
   }
 
+  if (!Number.isFinite(hourlyRate) || hourlyRate < 0) {
+    return NextResponse.json({ message: "Hourly rate must be a positive number." }, { status: 400 });
+  }
+
   try {
     const result = await query(
-      `insert into public.users (full_name, email, employee_id, phone, password_hash, role, staff_position)
-       values ($1, $2, $3, $4, $5, $6, $7)
-       returning id, full_name, email, employee_id, phone, role, staff_position, created_at`,
-      [fullName, email, employeeId, phone, hashPassword(password), role, staffPosition]
+      `insert into public.users (full_name, email, employee_id, hourly_rate, phone, password_hash, role, staff_position)
+       values ($1, $2, $3, $4, $5, $6, $7, $8)
+       returning id, full_name, email, employee_id, hourly_rate, phone, role, staff_position, created_at`,
+      [fullName, email, employeeId, hourlyRate, phone, hashPassword(password), role, staffPosition]
     );
 
     return NextResponse.json({ staff: serializeStaff(result.rows[0]) }, { status: 201 });

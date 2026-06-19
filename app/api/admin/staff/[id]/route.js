@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../../../db";
 import { isEmployeeId, normalizeEmployeeId } from "../../../../employee-ids";
 import { hashPassword } from "../../../../passwords";
+import { ensurePayrollSchema } from "../../../../payroll-schema";
 import { ensureStaffPositionSchema } from "../../../../staff-schema";
 import { normalizeStaffPosition } from "../../../../staff-positions";
 import { getStaffUserForRequest, requireAdminKey } from "../../admin-auth";
@@ -24,6 +25,7 @@ function serializeStaff(row) {
     email: row.email,
     employeeId: row.employee_id,
     fullName: row.full_name,
+    hourlyRate: Number(row.hourly_rate || 0),
     id: row.id,
     phone: row.phone,
     role: row.role,
@@ -44,6 +46,7 @@ export async function PATCH(request, { params }) {
   }
 
   await ensureStaffPositionSchema();
+  await ensurePayrollSchema();
 
   const { id } = await params;
   const body = await request.json();
@@ -90,6 +93,17 @@ export async function PATCH(request, { params }) {
     fields.push(`phone = $${values.length}`);
   }
 
+  if (body.hourlyRate !== undefined) {
+    const hourlyRate = Number(body.hourlyRate || 0);
+
+    if (!Number.isFinite(hourlyRate) || hourlyRate < 0) {
+      return NextResponse.json({ message: "Hourly rate must be a positive number." }, { status: 400 });
+    }
+
+    values.push(hourlyRate);
+    fields.push(`hourly_rate = $${values.length}`);
+  }
+
   if (body.role !== undefined) {
     const role = String(body.role || "").trim().toLowerCase();
 
@@ -132,7 +146,7 @@ export async function PATCH(request, { params }) {
       `update public.users
        set ${fields.join(", ")}
        where id = $${values.length}
-       returning id, full_name, email, employee_id, phone, role, staff_position, created_at`,
+       returning id, full_name, email, employee_id, hourly_rate, phone, role, staff_position, created_at`,
       values
     );
 
