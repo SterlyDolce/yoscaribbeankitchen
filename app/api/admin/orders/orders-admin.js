@@ -1,4 +1,5 @@
 export const orderStatuses = new Set([
+  "payment_pending",
   "requested",
   "confirmed",
   "preparing",
@@ -14,6 +15,8 @@ const formatter = new Intl.NumberFormat("en-US", {
 });
 
 function formatStatus(status) {
+  if (!status) return "unknown";
+
   if (status === "in_route") {
     return "In route";
   }
@@ -34,6 +37,7 @@ export function serializeOrder(row, items = []) {
     items,
     deliveryAddress: row.delivery_address,
     paymentPreference: row.payment_preference,
+    paymentStatus: row.payment_status,
     status: row.status,
     subtotal: Number(row.subtotal),
     tax: Number(row.tax),
@@ -66,6 +70,7 @@ export function buildReceipt(order) {
     `Fulfillment: ${order.fulfillmentMethod}`,
     order.deliveryAddress ? `Delivery address:\n${order.deliveryAddress}` : null,
     `Payment: ${order.paymentPreference}`,
+    `Payment status: ${formatStatus(order.paymentStatus)}`,
     `Status: ${formatStatus(order.status)}`,
     "",
     "Items"

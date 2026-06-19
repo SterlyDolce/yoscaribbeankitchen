@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../../db";
 import { getMenuItem } from "../../../menu-data";
 import { formatDeliveryAddress, normalizeGuestContact, validateCustomer } from "../../../order/guest-checkout";
+import { ensureOrderPaymentTracking } from "../../../order/payment-schema";
 import { buildOrderLines, buildRequestedItems, calculateOrderTotals } from "../../../order/order-pricing";
 import { getUserForSessionToken, sessionCookieName } from "../../../session";
 
@@ -51,6 +52,8 @@ export async function POST(request) {
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json({ message: "Stripe is not configured." }, { status: 503 });
   }
+
+  await ensureOrderPaymentTracking();
 
   const user = await getUserForSessionToken(request.cookies.get(sessionCookieName)?.value);
   const body = await request.json();
@@ -106,12 +109,13 @@ export async function POST(request) {
 
   const orderLines = orderLinesResult.orderLines;
   const totals = calculateOrderTotals(orderLines, fulfillmentMethod);
+  let pendingOrderId = null;
 
   try {
     const orderResult = await query(
       `insert into public.orders
-        (user_id, guest_name, guest_email, guest_phone, fulfillment_method, payment_preference, delivery_address, subtotal, tax, total)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        (user_id, guest_name, guest_email, guest_phone, fulfillment_method, payment_preference, payment_status, delivery_address, status, subtotal, tax, total)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        returning id`,
       [
         user?.id || null,
@@ -120,13 +124,16 @@ export async function POST(request) {
         customerResult.guestContact?.phone || null,
         fulfillmentMethod,
         "Pay online",
+        "pending",
         deliveryAddress,
+        "payment_pending",
         totals.subtotal,
         totals.tax,
         totals.total
       ]
     );
     const order = orderResult.rows[0];
+    pendingOrderId = order.id;
 
     for (const line of orderLines) {
       await query(
@@ -147,15 +154,12 @@ export async function POST(request) {
     }
 
     const baseUrl = getBaseUrl(request);
-    const successPath = user
-      ? `/account?order=${order.id}&payment=success`
-      : `/confirm-order?order=${order.id}&payment=success`;
     const payload = {
       "automatic_tax[enabled]": "false",
       "customer_email": customer.email,
       "metadata[order_id]": order.id,
       mode: "payment",
-      success_url: `${baseUrl}${successPath}`,
+      success_url: `${baseUrl}/confirm-order?order=${order.id}&payment=success`,
       cancel_url: `${baseUrl}/confirm-order?payment=cancelled`
     };
 
@@ -188,9 +192,26 @@ export async function POST(request) {
 
     const session = await stripeRequest("/v1/checkout/sessions", payload);
 
+    await query(
+      `update public.orders
+       set stripe_session_id = $1,
+           stripe_payment_intent_id = $2
+       where id = $3`,
+      [session.id, session.payment_intent || null, order.id]
+    );
+
     return NextResponse.json({ orderId: order.id, url: session.url });
   } catch (error) {
     console.error("Failed to create Stripe checkout session.", error);
+    if (pendingOrderId) {
+      await query(
+        `update public.orders
+         set status = 'cancelled',
+             payment_status = 'checkout_failed'
+         where id = $1`,
+        [pendingOrderId]
+      );
+    }
     return NextResponse.json({ message: error.message || "Unable to start checkout." }, { status: 500 });
   }
 }

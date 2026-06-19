@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { ArrowRight, Clock3, CreditCard, MapPin, Phone, ReceiptText, ShoppingBag, Truck, UserRound } from "lucide-react";
 import MobileNav from "../MobileNav";
 import { query } from "../db";
+import { ensureOrderPaymentTracking } from "../order/payment-schema";
 import { getUserForSessionToken, sessionCookieName } from "../session";
 import AddressForm from "./AddressForm";
 import SignOutButton from "./SignOutButton";
@@ -22,6 +23,8 @@ const formatter = new Intl.NumberFormat("en-US", {
 });
 
 function formatOrderStatus(status) {
+  if (!status) return "unknown";
+
   if (status === "in_route") {
     return "In route";
   }
@@ -42,8 +45,10 @@ function formatUserAddress(user) {
 }
 
 async function getRecentOrders(userId) {
+  await ensureOrderPaymentTracking();
+
   const ordersResult = await query(
-    `select id, fulfillment_method, payment_preference, delivery_address, status, total, created_at
+    `select id, fulfillment_method, payment_preference, payment_status, delivery_address, status, total, created_at
      from public.orders
      where user_id = $1
      order by created_at desc
@@ -194,9 +199,9 @@ export default async function AccountPage() {
                       <b>{formatter.format(Number(order.total))}</b>
                     </div>
                     <div className="order-meta-row">
-                      <span><Truck size={14} />{order.fulfillment_method}</span>
-                      <span><CreditCard size={14} />{order.payment_preference}</span>
-                      <span><Clock3 size={14} />{formatOrderStatus(order.status)}</span>
+	                      <span><Truck size={14} />{order.fulfillment_method}</span>
+	                      <span><CreditCard size={14} />{order.payment_preference} · {formatOrderStatus(order.payment_status)}</span>
+	                      <span><Clock3 size={14} />{formatOrderStatus(order.status)}</span>
                     </div>
                     {order.delivery_address && <p className="order-address">{order.delivery_address}</p>}
                     <ul>

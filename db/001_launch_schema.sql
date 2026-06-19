@@ -61,6 +61,9 @@ create table if not exists public.orders (
   guest_phone text,
   fulfillment_method text not null,
   payment_preference text not null,
+  payment_status text not null default 'unpaid',
+  stripe_session_id text,
+  stripe_payment_intent_id text,
   delivery_address text,
   status text not null default 'requested',
   subtotal numeric(10, 2) not null check (subtotal >= 0),
@@ -75,9 +78,13 @@ alter table public.orders alter column user_id drop not null;
 alter table public.orders add column if not exists guest_name text;
 alter table public.orders add column if not exists guest_email text;
 alter table public.orders add column if not exists guest_phone text;
+alter table public.orders add column if not exists payment_status text not null default 'unpaid';
+alter table public.orders add column if not exists stripe_session_id text;
+alter table public.orders add column if not exists stripe_payment_intent_id text;
 
 create index if not exists orders_user_id_created_at_idx on public.orders (user_id, created_at desc);
 create index if not exists orders_guest_email_created_at_idx on public.orders (lower(guest_email), created_at desc);
+create unique index if not exists orders_stripe_session_id_key on public.orders (stripe_session_id) where stripe_session_id is not null;
 
 create table if not exists public.order_items (
   id uuid primary key default gen_random_uuid(),

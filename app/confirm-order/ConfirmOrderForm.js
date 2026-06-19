@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2, ShoppingBag, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatMenuItemSelections, getMenuItemUnitPrice } from "../menu-customizations";
@@ -19,6 +20,7 @@ const formatter = new Intl.NumberFormat("en-US", {
 });
 
 export default function ConfirmOrderForm({ menuItems, user }) {
+  const searchParams = useSearchParams();
   const [bag, setBag] = useState([]);
   const [orderMode, setOrderMode] = useState(orderModes[0]);
   const [paymentType, setPaymentType] = useState(paymentTypes[0]);
@@ -51,6 +53,29 @@ export default function ConfirmOrderForm({ menuItems, user }) {
       window.removeEventListener("storage", syncStorage);
     };
   }, []);
+
+  useEffect(() => {
+    const payment = searchParams.get("payment");
+    const orderId = searchParams.get("order");
+
+    if (payment === "success") {
+      writeOrderBag([]);
+      setBag([]);
+      setStatus({
+        kind: "success",
+        message: orderId
+          ? `Payment received for order ${orderId.slice(0, 8)}. Yo's will confirm timing.`
+          : "Payment received. Yo's will confirm timing."
+      });
+    }
+
+    if (payment === "cancelled") {
+      setStatus({
+        kind: "error",
+        message: "Payment was cancelled. Your bag is still here if you want to try again."
+      });
+    }
+  }, [searchParams]);
 
   const bagLines = useMemo(() => resolveBagLines(bag, menuItems), [bag, menuItems]);
   const totalItems = bagLines.reduce((total, line) => total + line.quantity, 0);

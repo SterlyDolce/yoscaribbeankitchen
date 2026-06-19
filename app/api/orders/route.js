@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../db";
 import { getMenuItem } from "../../menu-data";
 import { formatDeliveryAddress, normalizeGuestContact, validateCustomer } from "../../order/guest-checkout";
+import { ensureOrderPaymentTracking } from "../../order/payment-schema";
 import { buildOrderLines, buildRequestedItems, calculateOrderTotals } from "../../order/order-pricing";
 import { getUserForSessionToken, sessionCookieName } from "../../session";
 
@@ -12,6 +13,8 @@ export async function POST(request) {
   if (!hasDatabaseConfig()) {
     return NextResponse.json({ message: "Database is not configured." }, { status: 503 });
   }
+
+  await ensureOrderPaymentTracking();
 
   const user = await getUserForSessionToken(request.cookies.get(sessionCookieName)?.value);
   const body = await request.json();
@@ -72,8 +75,8 @@ export async function POST(request) {
   try {
     const orderResult = await query(
       `insert into public.orders
-        (user_id, guest_name, guest_email, guest_phone, fulfillment_method, payment_preference, delivery_address, subtotal, tax, total)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        (user_id, guest_name, guest_email, guest_phone, fulfillment_method, payment_preference, payment_status, delivery_address, subtotal, tax, total)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        returning id, status, total, created_at`,
       [
         user?.id || null,
@@ -82,6 +85,7 @@ export async function POST(request) {
         customerResult.guestContact?.phone || null,
         fulfillmentMethod,
         paymentPreference,
+        paymentPreference === "Pay online" ? "pending" : "pay_in_person",
         deliveryAddress,
         subtotal,
         tax,

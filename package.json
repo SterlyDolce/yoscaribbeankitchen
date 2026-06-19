@@ -11,7 +11,7 @@
     "start": "next start",
     "images:sync-menu": "node scripts/sync-menu-images.mjs",
     "stripe:sync-products": "node scripts/sync-stripe-products.mjs",
-    "lint": "next lint"
+    "lint": "next build --turbo"
   },
   "dependencies": {
     "lucide-react": "^1.18.0",

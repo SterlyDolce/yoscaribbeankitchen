@@ -1,0 +1,104 @@
+import crypto from "node:crypto";
+import { NextResponse } from "next/server";
+import { hasDatabaseConfig, query } from "../../../db";
+import { ensureOrderPaymentTracking } from "../../../order/payment-schema";
+
+function parseStripeSignature(header) {
+  return String(header || "")
+    .split(",")
+    .reduce((parts, item) => {
+      const [key, value] = item.split("=");
+      if (key && value) parts[key] = value;
+      return parts;
+    }, {});
+}
+
+function verifyStripeSignature(payload, signatureHeader) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    throw new Error("Stripe webhook secret is not configured.");
+  }
+
+  const signature = parseStripeSignature(signatureHeader);
+  const timestamp = signature.t;
+  const expectedSignature = crypto
+    .createHmac("sha256", webhookSecret)
+    .update(`${timestamp}.${payload}`)
+    .digest("hex");
+  const receivedSignature = signature.v1;
+
+  if (!timestamp || !receivedSignature) {
+    throw new Error("Missing Stripe signature.");
+  }
+
+  const expectedBuffer = Buffer.from(expectedSignature, "hex");
+  const receivedBuffer = Buffer.from(receivedSignature, "hex");
+
+  if (
+    expectedBuffer.length !== receivedBuffer.length ||
+    !crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
+  ) {
+    throw new Error("Invalid Stripe signature.");
+  }
+}
+
+async function updateOrderFromCheckoutSession(session, paymentStatus, orderStatus) {
+  const orderId = session.metadata?.order_id || null;
+
+  await query(
+    `update public.orders
+     set payment_status = $1,
+         status = $2,
+         stripe_session_id = coalesce(stripe_session_id, $3),
+         stripe_payment_intent_id = coalesce($4, stripe_payment_intent_id)
+     where id = $5 or stripe_session_id = $3`,
+    [
+      paymentStatus,
+      orderStatus,
+      session.id,
+      session.payment_intent || null,
+      orderId
+    ]
+  );
+}
+
+export async function POST(request) {
+  if (!hasDatabaseConfig()) {
+    return NextResponse.json({ message: "Database is not configured." }, { status: 503 });
+  }
+
+  await ensureOrderPaymentTracking();
+
+  const payload = await request.text();
+
+  try {
+    verifyStripeSignature(payload, request.headers.get("stripe-signature"));
+  } catch (error) {
+    return NextResponse.json({ message: error.message }, { status: 400 });
+  }
+
+  const event = JSON.parse(payload);
+
+  try {
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "checkout.session.async_payment_succeeded"
+    ) {
+      await updateOrderFromCheckoutSession(event.data.object, "paid", "requested");
+    }
+
+    if (event.type === "checkout.session.expired") {
+      await updateOrderFromCheckoutSession(event.data.object, "expired", "cancelled");
+    }
+
+    if (event.type === "checkout.session.async_payment_failed") {
+      await updateOrderFromCheckoutSession(event.data.object, "failed", "cancelled");
+    }
+  } catch (error) {
+    console.error("Failed to process Stripe webhook.", error);
+    return NextResponse.json({ message: "Unable to process webhook." }, { status: 500 });
+  }
+
+  return NextResponse.json({ received: true });
+}

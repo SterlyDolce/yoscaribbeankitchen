@@ -80,15 +80,22 @@ export async function parseMenuPayload(request, { partial = false } = {}) {
 }
 
 async function saveMenuImage(imageFile, buffer, payload) {
+  const configuredDirectory = process.env.MENU_IMAGE_UPLOAD_DIR;
+
+  if (process.env.NODE_ENV === "production" && !configuredDirectory) {
+    throw new Error("File uploads need MENU_IMAGE_UPLOAD_DIR in production. Use an image URL or configure persistent storage.");
+  }
+
   const slug = slugify(payload.slug || payload.name || "menu-item");
   const extension = getImageExtension(imageFile.type);
   const fileName = `${slug}-${Date.now()}.${extension}`;
-  const directory = path.join(process.cwd(), "public", "menu-images");
+  const directory = configuredDirectory || path.join(process.cwd(), "public", "menu-images");
+  const publicPath = process.env.MENU_IMAGE_PUBLIC_PATH || "/menu-images";
 
   await fs.mkdir(directory, { recursive: true });
   await fs.writeFile(path.join(directory, fileName), buffer);
 
-  return `/menu-images/${fileName}`;
+  return `${publicPath.replace(/\/+$/, "")}/${fileName}`;
 }
 
 function getImageExtension(contentType) {

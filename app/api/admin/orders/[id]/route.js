@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
 import { query } from "../../../../db";
+import { ensureOrderPaymentTracking } from "../../../../order/payment-schema";
 import { requireAdmin } from "../../admin-auth";
 import { orderStatuses, serializeOrder, serializeOrderItem } from "../orders-admin";
 
 export const dynamic = "force-dynamic";
 
 async function getOrder(id) {
+  await ensureOrderPaymentTracking();
+
   const orderResult = await query(
     `select
        o.id,
-       o.fulfillment_method,
-       o.payment_preference,
-       o.delivery_address,
+	       o.fulfillment_method,
+	       o.payment_preference,
+	       o.payment_status,
+	       o.delivery_address,
        o.status,
        o.subtotal,
        o.tax,

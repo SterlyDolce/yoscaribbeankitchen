@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "../../../db";
+import { ensureOrderPaymentTracking } from "../../../order/payment-schema";
 import { requireAdmin } from "../admin-auth";
 import { serializeOrder, serializeOrderItem } from "./orders-admin";
 
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
+  await ensureOrderPaymentTracking();
 
   const params = new URL(request.url).searchParams;
   const limit = Math.min(Number.parseInt(params.get("limit") || "50", 10), 100);
@@ -25,9 +27,10 @@ export async function GET(request) {
   const ordersResult = await query(
     `select
        o.id,
-       o.fulfillment_method,
-       o.payment_preference,
-       o.delivery_address,
+	       o.fulfillment_method,
+	       o.payment_preference,
+	       o.payment_status,
+	       o.delivery_address,
        o.status,
        o.subtotal,
        o.tax,
