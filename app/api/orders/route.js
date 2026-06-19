@@ -5,6 +5,7 @@ import { formatDeliveryAddress, normalizeGuestContact, validateCustomer } from "
 import { ensureOrderPaymentTracking } from "../../order/payment-schema";
 import { buildOrderLines, buildRequestedItems, calculateOrderTotals } from "../../order/order-pricing";
 import { getUserForSessionToken, sessionCookieName } from "../../session";
+import { notifyStaffForOrderStatus } from "../../staff-notifications";
 
 const fulfillmentMethods = new Set(["Pickup", "Delivery"]);
 const paymentPreferences = new Set(["Pay in person", "Pay online"]);
@@ -109,6 +110,15 @@ export async function POST(request) {
           line.unitPrice,
           line.lineTotal
         ]
+      );
+    }
+
+    if (order.status === "requested") {
+      await notifyStaffForOrderStatus(
+        order.id,
+        order.status,
+        "New Yo's order",
+        `${customer.fullName} placed a ${fulfillmentMethod.toLowerCase()} order.`
       );
     }
 

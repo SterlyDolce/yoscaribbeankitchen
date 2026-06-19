@@ -1,8 +1,11 @@
 "use client";
 
+import { MapPin, Pencil } from "lucide-react";
 import { useState } from "react";
 
 export default function AddressForm({ user }) {
+  const hasAddress = Boolean(user.addressLine1 && user.city && user.state && user.postalCode);
+  const [editing, setEditing] = useState(!hasAddress);
   const [form, setForm] = useState({
     addressLine1: user.addressLine1 || "",
     addressLine2: user.addressLine2 || "",
@@ -40,11 +43,34 @@ export default function AddressForm({ user }) {
       }
 
       setStatus({ kind: "success", message: "Delivery address saved." });
+      setEditing(false);
     } catch (error) {
       setStatus({ kind: "error", message: error.message });
     } finally {
       setSaving(false);
     }
+  }
+
+  const addressLines = [
+    form.addressLine1,
+    form.addressLine2,
+    form.city && form.state && form.postalCode ? `${form.city}, ${form.state} ${form.postalCode}` : ""
+  ].filter(Boolean);
+
+  if (!editing) {
+    return (
+      <button className="address-edit-card" onClick={() => setEditing(true)} type="button">
+        <span className="address-edit-icon">
+          <MapPin size={20} />
+        </span>
+        <span>
+          <small>Delivery address</small>
+          {addressLines.map((line) => <strong key={line}>{line}</strong>)}
+          {form.deliveryNotes && <em>{form.deliveryNotes}</em>}
+        </span>
+        <Pencil size={18} />
+      </button>
+    );
   }
 
   return (
@@ -87,7 +113,14 @@ export default function AddressForm({ user }) {
           value={form.deliveryNotes}
         />
       </label>
-      <button disabled={saving} type="submit">{saving ? "Saving..." : "Save delivery address"}</button>
+      <div className="address-form-actions">
+        <button disabled={saving} type="submit">{saving ? "Saving..." : "Save delivery address"}</button>
+        {hasAddress && (
+          <button className="address-cancel-button" disabled={saving} onClick={() => setEditing(false)} type="button">
+            Cancel
+          </button>
+        )}
+      </div>
       {status && <p className={`form-status ${status.kind}`} role="status">{status.message}</p>}
     </form>
   );

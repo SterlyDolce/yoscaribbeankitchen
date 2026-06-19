@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowRight, Clock3, CreditCard, MapPin, Phone, ReceiptText, ShoppingBag, Truck, UserRound } from "lucide-react";
+import { ArrowRight, Clock3, CreditCard, Phone, ReceiptText, ShoppingBag, Truck, UserRound } from "lucide-react";
 import MobileNav from "../MobileNav";
 import { query } from "../db";
 import { ensureOrderPaymentTracking } from "../order/payment-schema";
@@ -32,18 +32,6 @@ function formatOrderStatus(status) {
   return status.replace(/_/g, " ");
 }
 
-function formatUserAddress(user) {
-  if (!user.addressLine1 || !user.city || !user.state || !user.postalCode) {
-    return null;
-  }
-
-  return [
-    user.addressLine1,
-    user.addressLine2,
-    `${user.city}, ${user.state} ${user.postalCode}`
-  ].filter(Boolean);
-}
-
 async function getRecentOrders(userId) {
   await ensureOrderPaymentTracking();
 
@@ -62,10 +50,11 @@ async function getRecentOrders(userId) {
   }
 
   const itemsResult = await query(
-    `select order_id, item_name, special_instructions, quantity, line_total
-     from public.order_items
-     where order_id = any($1::uuid[])
-     order by created_at asc`,
+    `select oi.order_id, oi.item_name, oi.special_instructions, oi.quantity, oi.line_total, coalesce(mi.image, '/yos-logo.png') as image
+     from public.order_items oi
+     left join public.menu_items mi on mi.slug = oi.menu_item_slug
+     where oi.order_id = any($1::uuid[])
+     order by oi.created_at asc`,
     [orders.map((order) => order.id)]
   );
   const itemsByOrderId = new Map();
@@ -76,6 +65,7 @@ async function getRecentOrders(userId) {
       lineTotal: item.line_total,
       name: item.item_name,
       instructions: item.special_instructions,
+      image: item.image,
       quantity: item.quantity
     });
     itemsByOrderId.set(item.order_id, currentItems);
@@ -96,9 +86,7 @@ export default async function AccountPage() {
   }
 
   const orders = await getRecentOrders(user.id);
-  const addressLines = formatUserAddress(user);
   const firstName = user.fullName.split(" ")[0];
-  const latestOrder = orders[0];
 
   return (
     <main className="site inner-site account-site">
@@ -109,19 +97,6 @@ export default async function AccountPage() {
         </Link>
         <MobileNav />
       </header>
-
-      <section className="page-hero account-page-hero">
-        <div>
-          <p className="eyebrow">Account</p>
-          <h1>{firstName}&apos;s account.</h1>
-          <p>Keep delivery details ready and follow recent Yo&apos;s order requests from one place.</p>
-        </div>
-        <div className="account-hero-card">
-          <span>Recent orders</span>
-          <strong>{orders.length}</strong>
-          <small>{latestOrder ? `Last order ${formatter.format(Number(latestOrder.total))}` : "No orders yet"}</small>
-        </div>
-      </section>
 
       <section className="account-layout">
         <aside className="account-panel">
@@ -147,15 +122,6 @@ export default async function AccountPage() {
               </span>
             )}
           </div>
-          {addressLines ? (
-            <div className="profile-address">
-              <strong><MapPin size={17} /> Delivery address</strong>
-              {addressLines.map((line) => <span key={line}>{line}</span>)}
-              {user.deliveryNotes && <small>{user.deliveryNotes}</small>}
-            </div>
-          ) : (
-            <p className="profile-alert">Add an address before choosing delivery.</p>
-          )}
           <div className="account-panel-actions">
             <Link href="/menu">
               Start order
@@ -191,12 +157,22 @@ export default async function AccountPage() {
               <div className="order-history">
                 {orders.map((order) => (
                   <article key={order.id}>
-                    <div className="order-history-top">
-                      <div>
-                        <strong>Order {order.id.slice(0, 8)}</strong>
-                        <span>{new Date(order.created_at).toLocaleString()}</span>
+                    <div className="order-row-head">
+                      <Image
+                        src={order.items[0]?.image || "/yos-logo.png"}
+                        alt={order.items[0]?.name || "Yo's order"}
+                        width={78}
+                        height={78}
+                      />
+                      <div className="order-row-copy">
+                        <div className="order-history-top">
+                          <div>
+                            <strong>{order.items[0]?.name || `Order ${order.id.slice(0, 8)}`}</strong>
+                            <span>Order {order.id.slice(0, 8)} · {new Date(order.created_at).toLocaleString()}</span>
+                          </div>
+                          <b>{formatter.format(Number(order.total))}</b>
+                        </div>
                       </div>
-                      <b>{formatter.format(Number(order.total))}</b>
                     </div>
                     <div className="order-meta-row">
 	                      <span><Truck size={14} />{order.fulfillment_method}</span>

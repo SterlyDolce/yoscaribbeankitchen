@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { query, transaction } from "../../../../db";
 import { ensureOrderAuditSchema, recordOrderEvent } from "../../../../order/audit-schema";
 import { ensureOrderPaymentTracking } from "../../../../order/payment-schema";
+import { notifyStaffForOrderStatus } from "../../../../staff-notifications";
 import { getStaffUserForRequest, requireAdmin } from "../../admin-auth";
 import { getVisibleStatusesForPosition } from "../../../../staff-positions";
 import { orderStatuses, serializeOrder, serializeOrderItem } from "../orders-admin";
@@ -214,5 +215,13 @@ export async function PATCH(request, { params }) {
   }
 
   const order = await getOrder(id);
+  if (status && status !== currentOrder.status) {
+    await notifyStaffForOrderStatus(
+      id,
+      status,
+      "Order moved",
+      `Order ${id.slice(0, 8)} is now ${status.replace(/_/g, " ")}.`
+    );
+  }
   return NextResponse.json({ order });
 }

@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../../db";
 import { ensureOrderPaymentTracking } from "../../../order/payment-schema";
+import { notifyStaffForOrderStatus } from "../../../staff-notifications";
 
 function parseStripeSignature(header) {
   return String(header || "")
@@ -46,13 +47,14 @@ function verifyStripeSignature(payload, signatureHeader) {
 async function updateOrderFromCheckoutSession(session, paymentStatus, orderStatus) {
   const orderId = session.metadata?.order_id || null;
 
-  await query(
+  const result = await query(
     `update public.orders
      set payment_status = $1,
          status = $2,
          stripe_session_id = coalesce(stripe_session_id, $3),
          stripe_payment_intent_id = coalesce($4, stripe_payment_intent_id)
-     where id = $5 or stripe_session_id = $3`,
+     where id = $5 or stripe_session_id = $3
+     returning id`,
     [
       paymentStatus,
       orderStatus,
@@ -61,6 +63,16 @@ async function updateOrderFromCheckoutSession(session, paymentStatus, orderStatu
       orderId
     ]
   );
+
+  if (result.rowCount > 0 && orderStatus === "requested") {
+    const updatedOrderId = result.rows[0].id;
+    await notifyStaffForOrderStatus(
+      updatedOrderId,
+      orderStatus,
+      "Paid Yo's order",
+      "A paid online order is ready for front counter review."
+    );
+  }
 }
 
 export async function POST(request) {
