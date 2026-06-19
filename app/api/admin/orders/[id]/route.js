@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { query } from "../../../../db";
+import { query, transaction } from "../../../../db";
+import { ensureOrderAuditSchema, recordOrderEvent } from "../../../../order/audit-schema";
 import { ensureOrderPaymentTracking } from "../../../../order/payment-schema";
 import { getStaffUserForRequest, requireAdmin } from "../../admin-auth";
 import { getVisibleStatusesForPosition } from "../../../../staff-positions";
@@ -49,6 +50,7 @@ function canUpdatePayment(staffUser, order, nextPaymentStatus) {
 
 async function getOrder(id, visibleStatuses = null) {
   await ensureOrderPaymentTracking();
+  await ensureOrderAuditSchema();
 
   const values = [id];
   const visibilityClause = visibleStatuses ? `and o.status = any($2::text[])` : "";
@@ -91,7 +93,16 @@ async function getOrder(id, visibleStatuses = null) {
     [id]
   );
 
-  return serializeOrder(order, itemsResult.rows.map(serializeOrderItem));
+  const eventsResult = await query(
+    `select id, event_type, from_value, to_value, note, actor_name, actor_role, actor_position, created_at
+     from public.order_events
+     where order_id = $1
+     order by created_at desc
+     limit 50`,
+    [id]
+  );
+
+  return serializeOrder(order, itemsResult.rows.map(serializeOrderItem), eventsResult.rows);
 }
 
 export async function GET(request, { params }) {
@@ -167,13 +178,36 @@ export async function PATCH(request, { params }) {
   }
   values.push(id);
 
-  const result = await query(
-    `update public.orders
-     set ${fields.join(", ")}
-     where id = $${values.length}
-     returning id`,
-    values
-  );
+  const result = await transaction(async (client) => {
+    const updateResult = await client.query(
+      `update public.orders
+       set ${fields.join(", ")}
+       where id = $${values.length}
+       returning id`,
+      values
+    );
+
+    if (updateResult.rowCount === 0) {
+      return updateResult;
+    }
+
+    if (status && status !== currentOrder.status) {
+      await recordOrderEvent(client, currentOrder, staffUser, "status", currentOrder.status, status);
+    }
+
+    if (paymentStatus && paymentStatus !== currentOrder.paymentStatus) {
+      await recordOrderEvent(
+        client,
+        currentOrder,
+        staffUser,
+        "payment_status",
+        currentOrder.paymentStatus,
+        paymentStatus
+      );
+    }
+
+    return updateResult;
+  });
 
   if (result.rowCount === 0) {
     return NextResponse.json({ message: "Order not found." }, { status: 404 });

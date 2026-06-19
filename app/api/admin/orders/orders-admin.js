@@ -24,7 +24,21 @@ function formatStatus(status) {
   return status.replace(/_/g, " ");
 }
 
-export function serializeOrder(row, items = []) {
+function serializeOrderEvent(row) {
+  return {
+    actorName: row.actor_name,
+    actorPosition: row.actor_position,
+    actorRole: row.actor_role,
+    createdAt: row.created_at,
+    eventType: row.event_type,
+    fromValue: row.from_value,
+    id: row.id,
+    note: row.note,
+    toValue: row.to_value
+  };
+}
+
+export function serializeOrder(row, items = [], events = []) {
   return {
     createdAt: row.created_at,
     customer: {
@@ -42,7 +56,8 @@ export function serializeOrder(row, items = []) {
     subtotal: Number(row.subtotal),
     tax: Number(row.tax),
     total: Number(row.total),
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
+    events: events.map(serializeOrderEvent)
   };
 }
 

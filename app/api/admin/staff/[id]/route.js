@@ -4,9 +4,19 @@ import { isEmployeeId, normalizeEmployeeId } from "../../../../employee-ids";
 import { hashPassword } from "../../../../passwords";
 import { ensureStaffPositionSchema } from "../../../../staff-schema";
 import { normalizeStaffPosition } from "../../../../staff-positions";
-import { requireAdminKey } from "../../admin-auth";
+import { getStaffUserForRequest, requireAdminKey } from "../../admin-auth";
 
 const staffRoles = new Set(["admin", "staff"]);
+
+async function requireStaffManager(request) {
+  const adminKeyResult = requireAdminKey(request);
+  if (!adminKeyResult) return null;
+
+  const user = await getStaffUserForRequest(request);
+  if (user?.staffPosition === "manager") return null;
+
+  return adminKeyResult;
+}
 
 function serializeStaff(row) {
   return {
@@ -26,7 +36,7 @@ function roleDefaultPosition(role) {
 }
 
 export async function PATCH(request, { params }) {
-  const unauthorized = requireAdminKey(request);
+  const unauthorized = await requireStaffManager(request);
   if (unauthorized) return unauthorized;
 
   if (!hasDatabaseConfig()) {
