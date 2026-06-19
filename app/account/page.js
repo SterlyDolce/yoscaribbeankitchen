@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowRight, MapPin, Phone, ReceiptText, UserRound } from "lucide-react";
+import { ArrowRight, Clock3, CreditCard, MapPin, Phone, ReceiptText, ShoppingBag, Truck, UserRound } from "lucide-react";
 import MobileNav from "../MobileNav";
 import { query } from "../db";
 import { getUserForSessionToken, sessionCookieName } from "../session";
@@ -93,6 +93,7 @@ export default async function AccountPage() {
   const orders = await getRecentOrders(user.id);
   const addressLines = formatUserAddress(user);
   const firstName = user.fullName.split(" ")[0];
+  const latestOrder = orders[0];
 
   return (
     <main className="site inner-site account-site">
@@ -105,20 +106,30 @@ export default async function AccountPage() {
       </header>
 
       <section className="page-hero account-page-hero">
-        <p className="eyebrow">Account</p>
-        <h1>{firstName}&apos;s account.</h1>
-        <p>Keep delivery details ready and follow recent Yo&apos;s order requests from one place.</p>
+        <div>
+          <p className="eyebrow">Account</p>
+          <h1>{firstName}&apos;s account.</h1>
+          <p>Keep delivery details ready and follow recent Yo&apos;s order requests from one place.</p>
+        </div>
+        <div className="account-hero-card">
+          <span>Recent orders</span>
+          <strong>{orders.length}</strong>
+          <small>{latestOrder ? `Last order ${formatter.format(Number(latestOrder.total))}` : "No orders yet"}</small>
+        </div>
       </section>
 
       <section className="account-layout">
         <aside className="account-panel">
-          <div className="profile-avatar" aria-hidden="true">
-            {firstName.charAt(0)}
+          <div className="profile-card-top">
+            <div className="profile-avatar" aria-hidden="true">
+              {firstName.charAt(0)}
+            </div>
+            <div className="profile-title">
+              <p className="eyebrow">Profile</p>
+              <h2>{user.fullName}</h2>
+            </div>
           </div>
-          <div className="profile-title">
-            <p className="eyebrow">Profile</p>
-            <h2>{user.fullName}</h2>
-          </div>
+
           <div className="profile-contact">
             <span>
               <UserRound size={17} />
@@ -140,11 +151,13 @@ export default async function AccountPage() {
           ) : (
             <p className="profile-alert">Add an address before choosing delivery.</p>
           )}
-          <Link href="/order">
-            Start another order
-            <ArrowRight size={18} />
-          </Link>
-          <SignOutButton />
+          <div className="account-panel-actions">
+            <Link href="/menu">
+              Start order
+              <ArrowRight size={18} />
+            </Link>
+            <SignOutButton />
+          </div>
         </aside>
 
         <div className="account-main">
@@ -167,7 +180,7 @@ export default async function AccountPage() {
             {orders.length === 0 ? (
               <div className="empty-orders">
                 <p>No order requests yet.</p>
-                <Link href="/order">Build your first order</Link>
+                <Link href="/menu">Build your first order</Link>
               </div>
             ) : (
               <div className="order-history">
@@ -181,15 +194,15 @@ export default async function AccountPage() {
                       <b>{formatter.format(Number(order.total))}</b>
                     </div>
                     <div className="order-meta-row">
-                      <span>{order.fulfillment_method}</span>
-                      <span>{order.payment_preference}</span>
-                      <span>{formatOrderStatus(order.status)}</span>
+                      <span><Truck size={14} />{order.fulfillment_method}</span>
+                      <span><CreditCard size={14} />{order.payment_preference}</span>
+                      <span><Clock3 size={14} />{formatOrderStatus(order.status)}</span>
                     </div>
                     {order.delivery_address && <p className="order-address">{order.delivery_address}</p>}
                     <ul>
                       {order.items.map((item, index) => (
                         <li key={`${order.id}-${item.name}-${index}`}>
-                          <span>{item.quantity} x {item.name}</span>
+                          <span><ShoppingBag size={14} />{item.quantity} x {item.name}</span>
                           {item.instructions && <small>{item.instructions}</small>}
                           <strong>{formatter.format(Number(item.lineTotal))}</strong>
                         </li>

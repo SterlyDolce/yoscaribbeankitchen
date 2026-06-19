@@ -1,4 +1,6 @@
 import "./globals.css";
+import BagModal from "./BagModal";
+import PwaAppChrome from "./PwaAppChrome";
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
@@ -34,7 +36,11 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <PwaAppChrome />
+        {children}
+        <BagModal />
+      </body>
     </html>
   );
 }

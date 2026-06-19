@@ -1,5 +1,7 @@
 export const orderBagStorageKey = "yos-order-bag";
 
+export const openOrderBagEventName = "open-order-bag";
+
 export function readOrderBag() {
   if (typeof window === "undefined") {
     return [];
@@ -16,6 +18,10 @@ export function readOrderBag() {
 export function writeOrderBag(items) {
   window.localStorage.setItem(orderBagStorageKey, JSON.stringify(items));
   window.dispatchEvent(new Event("order-bag-change"));
+}
+
+export function openOrderBag() {
+  window.dispatchEvent(new Event(openOrderBagEventName));
 }
 
 function normalizeSelections(selections = {}) {
@@ -52,4 +58,12 @@ export function addToOrderBag(item) {
   }
 
   writeOrderBag(bag);
+}
+
+export function resolveBagLines(bag, menuItems) {
+  const menuBySlug = new Map(menuItems.map((item) => [item.slug, item]));
+
+  return bag
+    .map((line, index) => ({ ...line, item: menuBySlug.get(line.slug), lineIndex: index }))
+    .filter((line) => line.item && Number.isInteger(line.quantity) && line.quantity > 0);
 }

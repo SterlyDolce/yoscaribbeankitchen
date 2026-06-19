@@ -6,14 +6,14 @@ export default function manifest() {
     start_url: "/app",
     scope: "/",
     display: "standalone",
-    background_color: "#161514",
+    background_color: "#ffffff",
     theme_color: "#d71920",
     shortcuts: [
       {
-        name: "Start order",
-        short_name: "Order",
-        description: "Build an order request.",
-        url: "/order",
+        name: "Open menu",
+        short_name: "Menu",
+        description: "Browse the menu and build an order request.",
+        url: "/menu",
         icons: [{ src: "/pwa-icon.png", sizes: "512x512" }]
       },
       {

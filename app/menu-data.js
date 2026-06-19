@@ -13,6 +13,8 @@ function normalizeMenuItem(item) {
     note: item.note,
     price: Number(item.price),
     slug: item.slug,
+    stripePriceId: item.stripe_price_id,
+    stripeProductId: item.stripe_product_id,
     tag: item.tag
   };
 }
@@ -85,12 +87,7 @@ export async function getMenuItems() {
   }
 
   try {
-    const result = await query(
-      `select id, slug, name, name_in_creole, note, tag, accent, category, price, details, available, image
-       from public.menu_items
-       where available = true
-       order by display_order asc, name asc`
-    );
+    const result = await selectMenuItems();
 
     return attachCustomizationGroups(result.rows.map((row) => ({ ...normalizeMenuItem(row), id: row.id })));
   } catch (error) {
@@ -104,13 +101,7 @@ export async function getMenuItem(slug) {
     throw new Error("DATABASE_URL is required to load menu items.");
   }
 
-  const result = await query(
-    `select id, slug, name, name_in_creole, note, tag, accent, category, price, details, available, image
-     from public.menu_items
-     where available = true and slug = $1
-     limit 1`,
-    [slug]
-  );
+  const result = await selectMenuItem(slug);
 
   if (!result.rows[0]) return null;
 
@@ -118,4 +109,50 @@ export async function getMenuItem(slug) {
     { ...normalizeMenuItem(result.rows[0]), id: result.rows[0].id }
   ]);
   return item;
+}
+
+async function selectMenuItems() {
+  try {
+    return await query(
+      `select id, slug, name, name_in_creole, note, tag, accent, category, price, details, available, image, stripe_product_id, stripe_price_id
+       from public.menu_items
+       where available = true
+       order by display_order asc, name asc`
+    );
+  } catch (error) {
+    if (error.code !== "42703") throw error;
+
+    return query(
+      `select id, slug, name, name_in_creole, note, tag, accent, category, price, details, available, image,
+              null::text as stripe_product_id,
+              null::text as stripe_price_id
+       from public.menu_items
+       where available = true
+       order by display_order asc, name asc`
+    );
+  }
+}
+
+async function selectMenuItem(slug) {
+  try {
+    return await query(
+      `select id, slug, name, name_in_creole, note, tag, accent, category, price, details, available, image, stripe_product_id, stripe_price_id
+       from public.menu_items
+       where available = true and slug = $1
+       limit 1`,
+      [slug]
+    );
+  } catch (error) {
+    if (error.code !== "42703") throw error;
+
+    return query(
+      `select id, slug, name, name_in_creole, note, tag, accent, category, price, details, available, image,
+              null::text as stripe_product_id,
+              null::text as stripe_price_id
+       from public.menu_items
+       where available = true and slug = $1
+       limit 1`,
+      [slug]
+    );
+  }
 }

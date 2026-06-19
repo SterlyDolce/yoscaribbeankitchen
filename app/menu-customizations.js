@@ -43,7 +43,6 @@ export function validateMenuItemSelections(item, selections = {}) {
 }
 
 export function formatMenuItemSelections(item, selections = {}) {
-  console.log("formatMenuItemSelections called with item:", item, "selections:", selections); // --- DEBUG ---
   const customization = getMenuItemCustomization(item);
   if (!customization) return "";
 

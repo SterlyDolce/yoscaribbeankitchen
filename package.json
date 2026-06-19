@@ -9,6 +9,8 @@
     "dev": "next dev --webpack",
     "build": "next build --turbo",
     "start": "next start",
+    "images:sync-menu": "node scripts/sync-menu-images.mjs",
+    "stripe:sync-products": "node scripts/sync-stripe-products.mjs",
     "lint": "next lint"
   },
   "dependencies": {

@@ -3,11 +3,11 @@
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import BagButton from "./BagButton";
 
 const links = [
   { href: "/", label: "Home" },
   { href: "/menu", label: "Menu" },
-  { href: "/order", label: "Order" },
   { href: "/account", label: "Account" },
   { href: "/#visit", label: "Visit" }
 ];
@@ -17,6 +17,7 @@ export default function MobileNav() {
 
   return (
     <div className="nav-wrap">
+      <BagButton className="nav-bag-button" />
       <button
         aria-controls="primary-menu"
         aria-expanded={open}

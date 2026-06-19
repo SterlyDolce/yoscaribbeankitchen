@@ -34,11 +34,11 @@ export async function GET(request) {
        o.total,
        o.created_at,
        o.updated_at,
-       u.full_name as customer_name,
-       u.email as customer_email,
-       u.phone as customer_phone
+       coalesce(u.full_name, o.guest_name) as customer_name,
+       coalesce(u.email, o.guest_email) as customer_email,
+       coalesce(u.phone, o.guest_phone) as customer_phone
      from public.orders o
-     join public.users u on u.id = o.user_id
+     left join public.users u on u.id = o.user_id
      ${where.length > 0 ? `where ${where.join(" and ")}` : ""}
      order by o.created_at desc
      limit $${values.length}`,

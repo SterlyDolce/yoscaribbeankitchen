@@ -10,7 +10,7 @@ import {
   getMenuItemUnitPrice,
   requiresMealOptions
 } from "../menu-customizations";
-import { addToOrderBag } from "./order-bag";
+import { addToOrderBag, openOrderBag } from "./order-bag";
 
 const formatter = new Intl.NumberFormat("en-US", {
   currency: "USD",
@@ -93,7 +93,7 @@ export default function CustomizeOrderItem({ item, modal = false }) {
           <X size={18} />
         </button>
       ) : (
-        <Link className="customize-back-link" href="/order">
+        <Link className="customize-back-link" href="/menu">
           <ArrowLeft size={18} />
           Back to menu
         </Link>
@@ -282,9 +282,9 @@ export default function CustomizeOrderItem({ item, modal = false }) {
             >
               Added to your bag.
 
-              <Link href="/order">
+              <button onClick={openOrderBag} type="button">
                 Review bag
-              </Link>
+              </button>
             </div>
           )}
         </div>

@@ -46,7 +46,7 @@ export async function PATCH(request, { params }) {
       `update public.menu_items
        set ${fields.join(", ")}
        where slug = $${values.length}
-       returning id, slug, name, name_in_creole, note, tag, accent, category, price, details, image, available, display_order`,
+       returning id, slug, name, name_in_creole, note, tag, accent, category, price, details, image, available, display_order, stripe_product_id, stripe_price_id`,
       values
     );
 
@@ -73,7 +73,7 @@ export async function DELETE(request, { params }) {
     `update public.menu_items
      set available = false
      where slug = $1
-     returning id, slug, name, name_in_creole, note, tag, accent, category, price, details, image, available, display_order`,
+     returning id, slug, name, name_in_creole, note, tag, accent, category, price, details, image, available, display_order, stripe_product_id, stripe_price_id`,
     [slug]
   );
 

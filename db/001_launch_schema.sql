@@ -55,7 +55,10 @@ create index if not exists user_sessions_expires_at_idx on public.user_sessions 
 
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.users(id) on delete cascade,
+  user_id uuid references public.users(id) on delete cascade,
+  guest_name text,
+  guest_email text,
+  guest_phone text,
   fulfillment_method text not null,
   payment_preference text not null,
   delivery_address text,
@@ -68,8 +71,13 @@ create table if not exists public.orders (
 );
 
 alter table public.orders add column if not exists delivery_address text;
+alter table public.orders alter column user_id drop not null;
+alter table public.orders add column if not exists guest_name text;
+alter table public.orders add column if not exists guest_email text;
+alter table public.orders add column if not exists guest_phone text;
 
 create index if not exists orders_user_id_created_at_idx on public.orders (user_id, created_at desc);
+create index if not exists orders_guest_email_created_at_idx on public.orders (lower(guest_email), created_at desc);
 
 create table if not exists public.order_items (
   id uuid primary key default gen_random_uuid(),

@@ -3,34 +3,25 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
-  Clock3,
-  LockKeyhole,
   Search,
   ShoppingBag,
-  Sparkles,
   Trash2
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatMenuItemSelections, getMenuItemUnitPrice } from "../menu-customizations";
 import { orderBagStorageKey, readOrderBag, writeOrderBag } from "./order-bag";
 
-const categories = ["all", "appetizer", "soup", "main", "side"];
-const orderModes = ["Pickup", "Delivery"];
+const categories = ["all", "appetizer", "soup", "main", "side", "drink"];
 const formatter = new Intl.NumberFormat("en-US", {
   currency: "USD",
   style: "currency"
 });
 
-export default function OrderForm({ menuItems, user }) {
+export default function OrderForm({ menuItems }) {
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [orderMode, setOrderMode] = useState(orderModes[0]);
-  const [paymentType, setPaymentType] = useState("Pay in person");
-  const [status, setStatus] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
   const [bag, setBag] = useState([]);
   const [isMobileTicket, setIsMobileTicket] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -103,64 +94,23 @@ export default function OrderForm({ menuItems, user }) {
   );
 
   const serviceFee = totalItems > 0 ? 1.75 : 0;
-  const deliveryFee = totalItems > 0 && orderMode === "Delivery" ? 1.25 : 0;
   const tax = subtotal * 0.07;
-  const total = serviceFee + deliveryFee + subtotal + tax;
+  const total = serviceFee + subtotal + tax;
   const ticketSummary = `${totalItems} ${totalItems === 1 ? "item" : "items"}`;
-  const hasDeliveryAddress = Boolean(user?.addressLine1 && user?.city && user?.state && user?.postalCode);
-  const needsDeliveryAddress = orderMode === "Delivery" && user && !hasDeliveryAddress;
 
   function clearTicket() {
     writeOrderBag([]);
     setBag([]);
-    setStatus(null);
   }
 
   function removeLine(lineIndex) {
     const nextBag = bag.filter((_, index) => index !== lineIndex);
     writeOrderBag(nextBag);
     setBag(nextBag);
-    setStatus(null);
   }
 
   function toggleTicket() {
     if (isMobileTicket) setCollapsed((current) => !current);
-  }
-
-  async function placeOrder() {
-    setSubmitting(true);
-    setStatus(null);
-    setCollapsed(false);
-
-    try {
-      const response = await fetch("/api/orders", {
-        body: JSON.stringify({
-          fulfillmentMethod: orderMode,
-          items: bagLines.map((line) => ({
-            instructions: line.instructions,
-            quantity: line.quantity,
-            selections: line.selections,
-            slug: line.slug
-          })),
-          paymentPreference: paymentType
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST"
-      });
-      const result = await response.json();
-
-      if (!response.ok) throw new Error(result.message || "Unable to place order.");
-
-      clearTicket();
-      setStatus({
-        kind: "success",
-        message: `Order ${result.order.id.slice(0, 8)} received. Yo's will confirm timing.`
-      });
-    } catch (error) {
-      setStatus({ kind: "error", message: error.message });
-    } finally {
-      setSubmitting(false);
-    }
   }
 
   return (
@@ -168,28 +118,19 @@ export default function OrderForm({ menuItems, user }) {
       <div className="pos-menu-panel">
 
         <div className="pos-toolbar">
-          <div>
-            <p className="eyebrow">Menu</p>
-            <h2>{visibleItems.length} available</h2>
-          </div>
-          <div className="pos-mode-switch" aria-label="Fulfillment method">
-            {orderModes.map((mode) => (
-              <button className={orderMode === mode ? "active" : ""} key={mode} onClick={() => setOrderMode(mode)} type="button">
-                {mode}
-              </button>
-            ))}
-          </div>
+                      <p className="eyebrow">Menu</p>
+
         </div>
 
         <div className="order-filters">
-          <label className="menu-search">
+          {/* <label className="menu-search">
             <Search size={18} />
             <input onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search griot, rice, soup..." type="search" value={searchTerm} />
-          </label>
+          </label> */}
           <div className="pos-categories" aria-label="Menu categories">
             {categories.map((category) => (
               <button className={activeCategory === category ? "active" : ""} key={category} onClick={() => setActiveCategory(category)} type="button">
-                <span>{category}</span><b>{categoryCounts[category] || 0}</b>
+                <span>{category}</span>
               </button>
             ))}
           </div>
@@ -222,7 +163,7 @@ export default function OrderForm({ menuItems, user }) {
           <div className="pos-ticket-header">
             <button aria-controls="order-ticket-body" aria-expanded={!collapsed} className="ticket-toggle" onClick={toggleTicket} type="button">
               <span>
-                <p className="eyebrow">{orderMode}</p>
+                <p className="eyebrow">Review bag</p>
                 <h2>{collapsed ? formatter.format(total) : "Your bag"}</h2>
                 <small>{collapsed ? ticketSummary : "Review and send"}</small>
               </span>
@@ -256,36 +197,18 @@ export default function OrderForm({ menuItems, user }) {
               ))}
             </div>
 
-            <div className="payment-switch" aria-label="Payment preference">
-              {["Pay in person", "Pay online"].map((type) => (
-                <button className={paymentType === type ? "active" : ""} key={type} onClick={() => setPaymentType(type)} type="button">{type}</button>
-              ))}
-            </div>
-
             <div className="ticket-total" aria-label="Order total">
               <span>Items<strong>{totalItems}</strong></span>
               <span>Subtotal<strong>{formatter.format(subtotal)}</strong></span>
               <span>Tax<strong>{formatter.format(tax)}</strong></span>
               <span>Service Fee<strong>{formatter.format(serviceFee)}</strong></span>
-              <span>Delivery Fee<strong>{formatter.format(deliveryFee)}</strong></span>
-              <span className="grand-total">Total<strong>{formatter.format(total)}</strong></span>
+              <span className="grand-total">Estimated total<strong>{formatter.format(total)}</strong></span>
             </div>
 
-            {user ? (
-              needsDeliveryAddress ? (
-                <Link href="/account"><LockKeyhole size={18} />Add delivery address</Link>
-              ) : (
-                <button className="place-order-button" disabled={totalItems === 0 || submitting} onClick={placeOrder} type="button">
-                  <CheckCircle2 size={18} />{submitting ? "Sending order..." : "Place order"}
-                </button>
-              )
-            ) : (
-              <Link className={totalItems === 0 ? "disabled-link" : ""} href="/auth"><LockKeyhole size={18} />Sign in to continue</Link>
-            )}
-            {user && <small>Ordering as {user.email}</small>}
-            {orderMode === "Delivery" && hasDeliveryAddress && <small>Delivery to {user.addressLine1}, {user.city}</small>}
-            <small>Payment preference: {paymentType}</small>
-            {status && <p className={`form-status ${status.kind}`} role="status">{status.message}</p>}
+            <Link className={totalItems === 0 ? "disabled-link" : ""} href="/confirm-order">
+              Checkout
+              <ArrowRight size={18} />
+            </Link>
           </div>
         </aside>
       )}

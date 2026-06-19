@@ -55,7 +55,7 @@ const instructions = {
   }
 };
 
-export default function AppLanding() {
+export default function AppLanding({ menuItems = [] }) {
   const [ready, setReady] = useState(false);
   const [standalone, setStandalone] = useState(false);
   const [device, setDevice] = useState("desktop");
@@ -87,7 +87,7 @@ export default function AppLanding() {
     );
   }
 
-  if (standalone) return <HomeScreen />;
+  if (standalone) return <HomeScreen menuItems={menuItems} />;
 
   return (
     <main className="site app-install-site">

@@ -34,7 +34,7 @@ export default function RestaurantPage({ menuError, menuItems, variant }) {
               <Menu size={18} />
               {variant.button}
             </Link>
-            <Link className="secondary" href="/order">
+            <Link className="secondary" href="/menu">
               <ShoppingBag size={18} />
               Start order
             </Link>
@@ -114,7 +114,7 @@ export default function RestaurantPage({ menuError, menuItems, variant }) {
           <p className="eyebrow">Yo&apos;s Caribbean Kitchen</p>
           <h2>Real Food, Real Good.</h2>
         </div>
-        <Link href="/order">
+        <Link href="/menu">
           Start order
           <ArrowRight size={18} />
         </Link>

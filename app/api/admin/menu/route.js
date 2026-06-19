@@ -11,7 +11,7 @@ export async function GET(request) {
 
   const includeUnavailable = new URL(request.url).searchParams.get("includeUnavailable") === "true";
   const result = await query(
-    `select id, slug, name, name_in_creole, note, tag, accent, category, price, details, image, available, display_order
+    `select id, slug, name, name_in_creole, note, tag, accent, category, price, details, image, available, display_order, stripe_product_id, stripe_price_id
      from public.menu_items
      ${includeUnavailable ? "" : "where available = true"}
      order by display_order asc, name asc`
@@ -30,7 +30,7 @@ export async function POST(request) {
       `insert into public.menu_items
         (slug, name, name_in_creole, note, tag, accent, category, price, details, image, available, display_order)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-       returning id, slug, name, name_in_creole, note, tag, accent, category, price, details, image, available, display_order`,
+       returning id, slug, name, name_in_creole, note, tag, accent, category, price, details, image, available, display_order, stripe_product_id, stripe_price_id`,
       [
         item.slug,
         item.name,

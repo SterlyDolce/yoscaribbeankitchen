@@ -1,3 +1,6 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+
 const maxImageBytes = 2 * 1024 * 1024;
 
 export function slugify(value) {
@@ -43,6 +46,8 @@ export function serializeMenuItem(row) {
     note: row.note,
     price: Number(row.price),
     slug: row.slug,
+    stripePriceId: row.stripe_price_id,
+    stripeProductId: row.stripe_product_id,
     tag: row.tag
   };
 }
@@ -65,13 +70,30 @@ export async function parseMenuPayload(request, { partial = false } = {}) {
       }
 
       const buffer = Buffer.from(await imageFile.arrayBuffer());
-      payload.image = `data:${imageFile.type};base64,${buffer.toString("base64")}`;
+      payload.image = await saveMenuImage(imageFile, buffer, payload);
     }
 
     return normalizeMenuPayload(payload, { partial });
   }
 
   return normalizeMenuPayload(await request.json(), { partial });
+}
+
+async function saveMenuImage(imageFile, buffer, payload) {
+  const slug = slugify(payload.slug || payload.name || "menu-item");
+  const extension = getImageExtension(imageFile.type);
+  const fileName = `${slug}-${Date.now()}.${extension}`;
+  const directory = path.join(process.cwd(), "public", "menu-images");
+
+  await fs.mkdir(directory, { recursive: true });
+  await fs.writeFile(path.join(directory, fileName), buffer);
+
+  return `/menu-images/${fileName}`;
+}
+
+function getImageExtension(contentType) {
+  const subtype = String(contentType || "").split("/")[1] || "png";
+  return subtype.replace("jpeg", "jpg").replace(/[^a-z0-9]/gi, "") || "png";
 }
 
 function normalizeMenuPayload(payload, { partial }) {

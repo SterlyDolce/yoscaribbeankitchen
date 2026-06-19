@@ -1,29 +1,12 @@
 import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../db";
 import { getMenuItem } from "../../menu-data";
-import { formatMenuItemSelections, validateMenuItemSelections } from "../../menu-customizations";
+import { formatDeliveryAddress, normalizeGuestContact, validateCustomer } from "../../order/guest-checkout";
+import { buildOrderLines, buildRequestedItems, calculateOrderTotals } from "../../order/order-pricing";
 import { getUserForSessionToken, sessionCookieName } from "../../session";
 
-const taxRate = 0.07;
 const fulfillmentMethods = new Set(["Pickup", "Delivery"]);
 const paymentPreferences = new Set(["Pay in person", "Pay online"]);
-
-function money(value) {
-  return Math.round(value * 100) / 100;
-}
-
-function formatDeliveryAddress(user) {
-  if (!user.addressLine1 || !user.city || !user.state || !user.postalCode) {
-    return null;
-  }
-
-  return [
-    user.addressLine1,
-    user.addressLine2,
-    `${user.city}, ${user.state} ${user.postalCode}`,
-    user.deliveryNotes ? `Notes: ${user.deliveryNotes}` : null
-  ].filter(Boolean).join("\n");
-}
 
 export async function POST(request) {
   if (!hasDatabaseConfig()) {
@@ -31,11 +14,6 @@ export async function POST(request) {
   }
 
   const user = await getUserForSessionToken(request.cookies.get(sessionCookieName)?.value);
-
-  if (!user) {
-    return NextResponse.json({ message: "Sign in to place an order." }, { status: 401 });
-  }
-
   const body = await request.json();
   const fulfillmentMethod = body.fulfillmentMethod;
   const paymentPreference = body.paymentPreference;
@@ -45,7 +23,15 @@ export async function POST(request) {
     return NextResponse.json({ message: "Choose a valid order and payment option." }, { status: 400 });
   }
 
-  const deliveryAddress = fulfillmentMethod === "Delivery" ? formatDeliveryAddress(user) : null;
+  const guestContact = normalizeGuestContact(body.guestContact);
+  const customerResult = validateCustomer(user, guestContact, fulfillmentMethod);
+
+  if (!customerResult.valid) {
+    return NextResponse.json({ message: customerResult.message }, { status: 400 });
+  }
+
+  const customer = customerResult.customer;
+  const deliveryAddress = fulfillmentMethod === "Delivery" ? formatDeliveryAddress(customer) : null;
 
   if (fulfillmentMethod === "Delivery" && !deliveryAddress) {
     return NextResponse.json(
@@ -54,14 +40,7 @@ export async function POST(request) {
     );
   }
 
-  const requestedItems = items
-    .map((item) => ({
-      instructions: String(item.instructions || "").trim().slice(0, 300),
-      quantity: Number.parseInt(item.quantity, 10),
-      selections: item.selections && typeof item.selections === "object" ? item.selections : {},
-      slug: String(item.slug || "")
-    }))
-    .filter((item) => item.slug && Number.isInteger(item.quantity) && item.quantity > 0);
+  const requestedItems = buildRequestedItems(items);
 
   if (requestedItems.length === 0) {
     return NextResponse.json({ message: "Add at least one item before placing an order." }, { status: 400 });
@@ -81,42 +60,33 @@ export async function POST(request) {
     return NextResponse.json({ message: "One or more menu items are no longer available." }, { status: 400 });
   }
 
-  const orderLines = [];
+  const orderLinesResult = buildOrderLines(requestedItems, menuBySlug);
 
-  for (const requestedItem of requestedItems) {
-    const menuItem = menuBySlug.get(requestedItem.slug);
-    const selectionResult = validateMenuItemSelections(menuItem, requestedItem.selections);
-
-    if (!selectionResult.valid) {
-      return NextResponse.json({ message: selectionResult.message }, { status: 400 });
-    }
-
-    const unitPrice = Number(menuItem.price) + selectionResult.priceAdjustment;
-    const lineTotal = money(unitPrice * requestedItem.quantity);
-    const mealSelections = formatMenuItemSelections(menuItem, selectionResult.selections);
-    const instructions = [mealSelections, requestedItem.instructions]
-      .filter(Boolean)
-      .join("; ")
-      .slice(0, 600);
-
-    orderLines.push({
-      instructions,
-      lineTotal,
-      menuItem,
-      quantity: requestedItem.quantity,
-      unitPrice
-    });
+  if (!orderLinesResult.valid) {
+    return NextResponse.json({ message: orderLinesResult.message }, { status: 400 });
   }
-  const subtotal = money(orderLines.reduce((total, line) => total + line.lineTotal, 0));
-  const tax = money(subtotal * taxRate);
-  const total = money(subtotal + tax);
+
+  const orderLines = orderLinesResult.orderLines;
+  const { subtotal, tax, total } = calculateOrderTotals(orderLines, fulfillmentMethod);
 
   try {
     const orderResult = await query(
-      `insert into public.orders (user_id, fulfillment_method, payment_preference, delivery_address, subtotal, tax, total)
-       values ($1, $2, $3, $4, $5, $6, $7)
+      `insert into public.orders
+        (user_id, guest_name, guest_email, guest_phone, fulfillment_method, payment_preference, delivery_address, subtotal, tax, total)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        returning id, status, total, created_at`,
-      [user.id, fulfillmentMethod, paymentPreference, deliveryAddress, subtotal, tax, total]
+      [
+        user?.id || null,
+        customerResult.guestContact?.fullName || null,
+        customerResult.guestContact?.email || null,
+        customerResult.guestContact?.phone || null,
+        fulfillmentMethod,
+        paymentPreference,
+        deliveryAddress,
+        subtotal,
+        tax,
+        total
+      ]
     );
     const order = orderResult.rows[0];
 
