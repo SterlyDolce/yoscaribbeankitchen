@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { query } from "../../../db";
 import { ensureOrderPaymentTracking } from "../../../order/payment-schema";
-import { requireAdmin } from "../admin-auth";
+import { getStaffUserForRequest, requireAdmin } from "../admin-auth";
+import { getVisibleStatusesForPosition } from "../../../staff-positions";
 import { serializeOrder, serializeOrderItem } from "./orders-admin";
 
 export const dynamic = "force-dynamic";
@@ -14,12 +15,23 @@ export async function GET(request) {
   const params = new URL(request.url).searchParams;
   const limit = Math.min(Number.parseInt(params.get("limit") || "50", 10), 100);
   const status = params.get("status");
+  const staffUser = await getStaffUserForRequest(request);
+  const visibleStatuses = staffUser ? getVisibleStatusesForPosition(staffUser.staffPosition) : null;
   const values = [];
   const where = [];
 
   if (status) {
+    if (visibleStatuses && !visibleStatuses.includes(status)) {
+      return NextResponse.json({ orders: [] });
+    }
+
     values.push(status);
     where.push(`o.status = $${values.length}`);
+  }
+
+  if (visibleStatuses) {
+    values.push(visibleStatuses);
+    where.push(`o.status = any($${values.length}::text[])`);
   }
 
   values.push(limit);

@@ -7,12 +7,14 @@ create table if not exists public.users (
   phone text,
   password_hash text,
   role text not null default 'customer',
+  staff_position text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 alter table public.users add column if not exists password_hash text;
 alter table public.users add column if not exists role text not null default 'customer';
+alter table public.users add column if not exists staff_position text;
 alter table public.users add column if not exists address_line1 text;
 alter table public.users add column if not exists address_line2 text;
 alter table public.users add column if not exists city text;

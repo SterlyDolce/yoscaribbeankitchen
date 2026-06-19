@@ -1,5 +1,7 @@
 import crypto from "crypto";
 import { hasDatabaseConfig, query } from "./db";
+import { ensureStaffPositionSchema } from "./staff-schema";
+import { normalizeStaffPosition } from "./staff-positions";
 
 export const sessionCookieName = "yos_session";
 const sessionLengthMs = 1000 * 60 * 60 * 24 * 30;
@@ -24,6 +26,9 @@ function publicUser(user) {
     phone: user.phone,
     postalCode: user.postal_code,
     role: user.role,
+    staffPosition: ["admin", "staff"].includes(user.role)
+      ? normalizeStaffPosition(user.staff_position, user.role === "admin" ? "manager" : "front")
+      : null,
     state: user.state
   };
 }
@@ -54,14 +59,17 @@ export async function getUserForSessionToken(token) {
     return null;
   }
 
+  await ensureStaffPositionSchema();
+
   const result = await query(
     `select
        u.id,
        u.full_name,
        u.email,
-       u.phone,
-       u.role,
-       u.address_line1,
+	       u.phone,
+	       u.role,
+	       u.staff_position,
+	       u.address_line1,
        u.address_line2,
        u.city,
        u.state,

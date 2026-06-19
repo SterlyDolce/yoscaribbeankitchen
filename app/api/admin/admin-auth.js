@@ -20,6 +20,11 @@ function getBearerToken(request) {
   return scheme?.toLowerCase() === "bearer" ? token : "";
 }
 
+export async function getStaffUserForRequest(request) {
+  const bearerToken = getBearerToken(request);
+  return getUserForSessionToken(bearerToken);
+}
+
 export function requireAdminKey(request) {
   const configuredKey = process.env.ADMIN_API_KEY;
   const providedKey = request.headers.get("x-admin-key") || "";
@@ -46,8 +51,7 @@ export async function requireAdmin(request, { allowStaffSession = true } = {}) {
     return adminKeyResult;
   }
 
-  const bearerToken = getBearerToken(request);
-  const user = await getUserForSessionToken(bearerToken);
+  const user = await getStaffUserForRequest(request);
 
   if (user && ["admin", "staff"].includes(user.role)) {
     return null;

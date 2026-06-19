@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../../db";
 import { verifyPassword } from "../../../passwords";
 import { createSessionToken } from "../../../session";
+import { ensureStaffPositionSchema } from "../../../staff-schema";
+import { normalizeStaffPosition } from "../../../staff-positions";
 
 export async function POST(request) {
   if (!hasDatabaseConfig()) {
@@ -17,8 +19,10 @@ export async function POST(request) {
   }
 
   try {
+    await ensureStaffPositionSchema();
+
     const result = await query(
-      `select id, full_name, email, phone, role, password_hash
+      `select id, full_name, email, phone, role, staff_position, password_hash
        from public.users
        where lower(email) = $1
        limit 1`,
@@ -35,6 +39,7 @@ export async function POST(request) {
     }
 
     const session = await createSessionToken(user.id);
+    const staffPosition = normalizeStaffPosition(user.staff_position, user.role === "admin" ? "manager" : "front");
 
     return NextResponse.json({
       token: session.token,
@@ -44,7 +49,8 @@ export async function POST(request) {
         fullName: user.full_name,
         id: user.id,
         phone: user.phone,
-        role: user.role
+        role: user.role,
+        staffPosition
       }
     });
   } catch (error) {

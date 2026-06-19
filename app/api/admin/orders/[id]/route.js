@@ -1,13 +1,43 @@
 import { NextResponse } from "next/server";
 import { query } from "../../../../db";
 import { ensureOrderPaymentTracking } from "../../../../order/payment-schema";
-import { requireAdmin } from "../../admin-auth";
+import { getStaffUserForRequest, requireAdmin } from "../../admin-auth";
+import { getVisibleStatusesForPosition } from "../../../../staff-positions";
 import { orderStatuses, serializeOrder, serializeOrderItem } from "../orders-admin";
 
 export const dynamic = "force-dynamic";
 
-async function getOrder(id) {
+const positionTransitions = {
+  delivery: {
+    in_route: ["completed"],
+    ready: ["in_route"]
+  },
+  expo: {
+    preparing: ["ready"]
+  },
+  front: {
+    requested: ["cancelled", "confirmed"]
+  },
+  prep: {
+    confirmed: ["preparing"],
+    preparing: ["ready"]
+  }
+};
+
+function canUpdateStatus(staffUser, order, nextStatus) {
+  if (!staffUser || staffUser.staffPosition === "manager") {
+    return true;
+  }
+
+  return positionTransitions[staffUser.staffPosition]?.[order.status]?.includes(nextStatus) || false;
+}
+
+async function getOrder(id, visibleStatuses = null) {
   await ensureOrderPaymentTracking();
+
+  const values = [id];
+  const visibilityClause = visibleStatuses ? `and o.status = any($2::text[])` : "";
+  if (visibleStatuses) values.push(visibleStatuses);
 
   const orderResult = await query(
     `select
@@ -25,11 +55,12 @@ async function getOrder(id) {
        coalesce(u.full_name, o.guest_name) as customer_name,
        coalesce(u.email, o.guest_email) as customer_email,
        coalesce(u.phone, o.guest_phone) as customer_phone
-     from public.orders o
-     left join public.users u on u.id = o.user_id
-     where o.id = $1
-     limit 1`,
-    [id]
+	     from public.orders o
+	     left join public.users u on u.id = o.user_id
+	     where o.id = $1
+	     ${visibilityClause}
+	     limit 1`,
+    values
   );
   const order = orderResult.rows[0];
 
@@ -53,7 +84,9 @@ export async function GET(request, { params }) {
   if (unauthorized) return unauthorized;
 
   const { id } = await params;
-  const order = await getOrder(id);
+  const staffUser = await getStaffUserForRequest(request);
+  const visibleStatuses = staffUser ? getVisibleStatusesForPosition(staffUser.staffPosition) : null;
+  const order = await getOrder(id, visibleStatuses);
 
   if (!order) {
     return NextResponse.json({ message: "Order not found." }, { status: 404 });
@@ -67,11 +100,23 @@ export async function PATCH(request, { params }) {
   if (unauthorized) return unauthorized;
 
   const { id } = await params;
+  const staffUser = await getStaffUserForRequest(request);
+  const visibleStatuses = staffUser ? getVisibleStatusesForPosition(staffUser.staffPosition) : null;
+  const currentOrder = await getOrder(id, visibleStatuses);
+
+  if (!currentOrder) {
+    return NextResponse.json({ message: "Order not found." }, { status: 404 });
+  }
+
   const body = await request.json();
   const status = String(body.status || "").trim().toLowerCase();
 
   if (!orderStatuses.has(status)) {
     return NextResponse.json({ message: "Choose a valid order status." }, { status: 400 });
+  }
+
+  if (!canUpdateStatus(staffUser, currentOrder, status)) {
+    return NextResponse.json({ message: "This staff position cannot move the order to that status." }, { status: 403 });
   }
 
   const result = await query(

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../../db";
 import { hashPassword } from "../../../passwords";
+import { ensureStaffPositionSchema } from "../../../staff-schema";
+import { normalizeStaffPosition } from "../../../staff-positions";
 import { requireAdminKey } from "../admin-auth";
 
 const staffRoles = new Set(["admin", "staff"]);
@@ -12,7 +14,8 @@ function serializeStaff(row) {
     fullName: row.full_name,
     id: row.id,
     phone: row.phone,
-    role: row.role
+    role: row.role,
+    staffPosition: row.staff_position
   };
 }
 
@@ -24,8 +27,10 @@ export async function GET(request) {
     return NextResponse.json({ message: "Database is not configured." }, { status: 503 });
   }
 
+  await ensureStaffPositionSchema();
+
   const result = await query(
-    `select id, full_name, email, phone, role, created_at
+    `select id, full_name, email, phone, role, staff_position, created_at
      from public.users
      where role in ('admin', 'staff')
      order by created_at desc`
@@ -42,12 +47,17 @@ export async function POST(request) {
     return NextResponse.json({ message: "Database is not configured." }, { status: 503 });
   }
 
+  await ensureStaffPositionSchema();
+
   const body = await request.json();
   const fullName = body.fullName?.trim();
   const email = body.email?.trim().toLowerCase();
   const phone = body.phone?.trim() || null;
   const password = body.password;
   const role = body.role?.trim().toLowerCase() || "staff";
+  const staffPosition = role === "admin"
+    ? normalizeStaffPosition(body.staffPosition, "manager")
+    : normalizeStaffPosition(body.staffPosition, "front");
 
   if (!fullName || !email || !password) {
     return NextResponse.json({ message: "Full name, email, and password are required." }, { status: 400 });
@@ -59,10 +69,10 @@ export async function POST(request) {
 
   try {
     const result = await query(
-      `insert into public.users (full_name, email, phone, password_hash, role)
-       values ($1, $2, $3, $4, $5)
-       returning id, full_name, email, phone, role, created_at`,
-      [fullName, email, phone, hashPassword(password), role]
+      `insert into public.users (full_name, email, phone, password_hash, role, staff_position)
+       values ($1, $2, $3, $4, $5, $6)
+       returning id, full_name, email, phone, role, staff_position, created_at`,
+      [fullName, email, phone, hashPassword(password), role, staffPosition]
     );
 
     return NextResponse.json({ staff: serializeStaff(result.rows[0]) }, { status: 201 });

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { query } from "../../../../../db";
 import { ensureOrderPaymentTracking } from "../../../../../order/payment-schema";
-import { requireAdmin } from "../../../admin-auth";
+import { getStaffUserForRequest, requireAdmin } from "../../../admin-auth";
+import { getVisibleStatusesForPosition } from "../../../../../staff-positions";
 import { buildReceipt, serializeOrder, serializeOrderItem } from "../../orders-admin";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,12 @@ export async function GET(request, { params }) {
   await ensureOrderPaymentTracking();
 
   const { id } = await params;
+  const staffUser = await getStaffUserForRequest(request);
+  const visibleStatuses = staffUser ? getVisibleStatusesForPosition(staffUser.staffPosition) : null;
+  const values = [id];
+  const visibilityClause = visibleStatuses ? `and o.status = any($2::text[])` : "";
+  if (visibleStatuses) values.push(visibleStatuses);
+
   const orderResult = await query(
     `select
        o.id,
@@ -28,11 +35,12 @@ export async function GET(request, { params }) {
        coalesce(u.full_name, o.guest_name) as customer_name,
        coalesce(u.email, o.guest_email) as customer_email,
        coalesce(u.phone, o.guest_phone) as customer_phone
-     from public.orders o
-     left join public.users u on u.id = o.user_id
-     where o.id = $1
-     limit 1`,
-    [id]
+	     from public.orders o
+	     left join public.users u on u.id = o.user_id
+	     where o.id = $1
+	     ${visibilityClause}
+	     limit 1`,
+    values
   );
   const orderRow = orderResult.rows[0];
 
