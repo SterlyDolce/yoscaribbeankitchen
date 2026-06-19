@@ -27,6 +27,8 @@ export async function GET(request) {
 
     values.push(status);
     where.push(`o.status = $${values.length}`);
+  } else {
+    where.push(`o.payment_status <> 'expired'`);
   }
 
   if (visibleStatuses) {
