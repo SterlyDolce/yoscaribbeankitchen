@@ -24,12 +24,27 @@ const positionTransitions = {
   }
 };
 
+const paymentStatuses = new Set(["paid"]);
+const paymentCollectionPositions = new Set(["front", "delivery"]);
+
 function canUpdateStatus(staffUser, order, nextStatus) {
   if (!staffUser || staffUser.staffPosition === "manager") {
     return true;
   }
 
   return positionTransitions[staffUser.staffPosition]?.[order.status]?.includes(nextStatus) || false;
+}
+
+function canUpdatePayment(staffUser, order, nextPaymentStatus) {
+  if (!staffUser || staffUser.staffPosition === "manager") {
+    return true;
+  }
+
+  if (nextPaymentStatus !== "paid" || order.paymentStatus !== "pay_in_person") {
+    return false;
+  }
+
+  return paymentCollectionPositions.has(staffUser.staffPosition);
 }
 
 async function getOrder(id, visibleStatuses = null) {
@@ -109,22 +124,55 @@ export async function PATCH(request, { params }) {
   }
 
   const body = await request.json();
-  const status = String(body.status || "").trim().toLowerCase();
+  const status = body.status === undefined ? "" : String(body.status).trim().toLowerCase();
+  const paymentStatus = body.paymentStatus === undefined ? "" : String(body.paymentStatus).trim().toLowerCase();
 
-  if (!orderStatuses.has(status)) {
+  if (!status && !paymentStatus) {
+    return NextResponse.json({ message: "Choose an order update." }, { status: 400 });
+  }
+
+  if (status && !orderStatuses.has(status)) {
     return NextResponse.json({ message: "Choose a valid order status." }, { status: 400 });
   }
 
-  if (!canUpdateStatus(staffUser, currentOrder, status)) {
+  if (paymentStatus && !paymentStatuses.has(paymentStatus)) {
+    return NextResponse.json({ message: "Choose a valid payment status." }, { status: 400 });
+  }
+
+  if (status && !canUpdateStatus(staffUser, currentOrder, status)) {
     return NextResponse.json({ message: "This staff position cannot move the order to that status." }, { status: 403 });
   }
 
+  if (paymentStatus && !canUpdatePayment(staffUser, currentOrder, paymentStatus)) {
+    return NextResponse.json({ message: "This staff position cannot update that payment status." }, { status: 403 });
+  }
+
+  const nextPaymentStatus = paymentStatus || currentOrder.paymentStatus;
+  if (status === "completed" && nextPaymentStatus !== "paid") {
+    return NextResponse.json(
+      { message: "Mark pay-in-person payment as paid before completing this order." },
+      { status: 409 }
+    );
+  }
+
+  const fields = [];
+  const values = [];
+  if (status) {
+    values.push(status);
+    fields.push(`status = $${values.length}`);
+  }
+  if (paymentStatus) {
+    values.push(paymentStatus);
+    fields.push(`payment_status = $${values.length}`);
+  }
+  values.push(id);
+
   const result = await query(
     `update public.orders
-     set status = $1
-     where id = $2
+     set ${fields.join(", ")}
+     where id = $${values.length}
      returning id`,
-    [status, id]
+    values
   );
 
   if (result.rowCount === 0) {
