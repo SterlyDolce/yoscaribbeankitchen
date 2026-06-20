@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import { ensureAccountBalanceSchema } from "../../../account-balance-schema";
 import { hasDatabaseConfig, query } from "../../../db";
 import { ensureOrderPaymentTracking } from "../../../order/payment-schema";
 import { notifyStaffForOrderStatus } from "../../../staff-notifications";
@@ -54,7 +55,7 @@ async function updateOrderFromCheckoutSession(session, paymentStatus, orderStatu
          stripe_session_id = coalesce(stripe_session_id, $3),
          stripe_payment_intent_id = coalesce($4, stripe_payment_intent_id)
      where id = $5 or stripe_session_id = $3
-     returning id`,
+     returning id, user_id, account_balance_applied`,
     [
       paymentStatus,
       orderStatus,
@@ -65,7 +66,18 @@ async function updateOrderFromCheckoutSession(session, paymentStatus, orderStatu
   );
 
   if (result.rowCount > 0 && orderStatus === "requested") {
-    const updatedOrderId = result.rows[0].id;
+    const updatedOrder = result.rows[0];
+    const updatedOrderId = updatedOrder.id;
+
+    if (paymentStatus === "paid" && updatedOrder.user_id && Number(updatedOrder.account_balance_applied) > 0) {
+      await query(
+        `update public.users
+         set account_balance = greatest(account_balance - $1, 0)
+         where id = $2`,
+        [updatedOrder.account_balance_applied, updatedOrder.user_id]
+      );
+    }
+
     await notifyStaffForOrderStatus(
       updatedOrderId,
       orderStatus,
@@ -81,6 +93,7 @@ export async function POST(request) {
   }
 
   await ensureOrderPaymentTracking();
+  await ensureAccountBalanceSchema();
 
   const payload = await request.text();
 

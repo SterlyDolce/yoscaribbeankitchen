@@ -44,7 +44,7 @@ export default function RestaurantPage({ menuError, menuItems, variant }) {
 
       <section className="status-bar" aria-label="Current restaurant status">
         <span>Online order requests open</span>
-        <span>Pickup timing confirmed after order</span>
+        <span>Delivery only in the local service area</span>
         <span>Haitian and Caribbean comfort food</span>
       </section>
 
@@ -73,7 +73,7 @@ export default function RestaurantPage({ menuError, menuItems, variant }) {
                   <div className="item-copy">
                     <h4>{item.name}</h4>
                     <p>{item.note}</p>
-                    <Link className="menu-order-link" href={`/order/${item.slug}`}>
+                    <Link className="menu-order-link" href={`/menu/${item.slug}`}>
                       Order now
                       <ArrowRight size={16} />
                     </Link>

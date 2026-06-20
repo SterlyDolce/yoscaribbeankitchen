@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureAccountBalanceSchema } from "../../../../account-balance-schema";
 import { query, transaction } from "../../../../db";
 import { ensureOrderAuditSchema, recordOrderEvent } from "../../../../order/audit-schema";
 import { ensureOrderPaymentTracking } from "../../../../order/payment-schema";
@@ -52,6 +53,7 @@ function canUpdatePayment(staffUser, order, nextPaymentStatus) {
 async function getOrder(id, visibleStatuses = null) {
   await ensureOrderPaymentTracking();
   await ensureOrderAuditSchema();
+  await ensureAccountBalanceSchema();
 
   const values = [id];
   const visibilityClause = visibleStatuses ? `and o.status = any($2::text[])` : "";
@@ -60,6 +62,7 @@ async function getOrder(id, visibleStatuses = null) {
   const orderResult = await query(
     `select
        o.id,
+       o.user_id,
 	       o.fulfillment_method,
 	       o.payment_preference,
 	       o.payment_status,
@@ -67,6 +70,7 @@ async function getOrder(id, visibleStatuses = null) {
        o.status,
        o.subtotal,
        o.tax,
+       o.account_balance_applied,
        o.total,
        o.created_at,
        o.updated_at,
@@ -205,6 +209,15 @@ export async function PATCH(request, { params }) {
         currentOrder.paymentStatus,
         paymentStatus
       );
+
+      if (paymentStatus === "paid" && currentOrder.userId && currentOrder.accountBalanceApplied > 0) {
+        await client.query(
+          `update public.users
+           set account_balance = greatest(account_balance - $1, 0)
+           where id = $2`,
+          [currentOrder.accountBalanceApplied, currentOrder.userId]
+        );
+      }
     }
 
     return updateResult;

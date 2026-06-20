@@ -48,8 +48,10 @@ export function serializeOrder(row, items = [], events = []) {
     },
     fulfillmentMethod: row.fulfillment_method,
     id: row.id,
+    userId: row.user_id,
     items,
     deliveryAddress: row.delivery_address,
+    accountBalanceApplied: Number(row.account_balance_applied || 0),
     paymentPreference: row.payment_preference,
     paymentStatus: row.payment_status,
     status: row.status,
@@ -102,6 +104,7 @@ export function buildReceipt(order) {
     "",
     `Subtotal: ${formatter.format(order.subtotal)}`,
     `Tax: ${formatter.format(order.tax)}`,
+    order.accountBalanceApplied > 0 ? `Back balance: ${formatter.format(order.accountBalanceApplied)}` : null,
     `Total: ${formatter.format(order.total)}`,
     "",
     "Thank you for ordering from Yo's Caribbean Kitchen."

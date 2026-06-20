@@ -15,6 +15,7 @@ function isStandaloneDisplay() {
 }
 
 function getTitle(pathname) {
+  if (pathname.startsWith("/menu/")) return "Customize";
   if (pathname.startsWith("/order/")) return "Customize";
   if (pathname.startsWith("/order")) return "Order";
   if (pathname.startsWith("/confirm-order")) return "Checkout";

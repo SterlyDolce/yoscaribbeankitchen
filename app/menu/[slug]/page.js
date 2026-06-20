@@ -1,19 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import MobileNav from "../MobileNav";
-import { getMenuItems } from "../menu-data";
-import OrderForm from "../order/OrderForm";
+import MobileNav from "../../MobileNav";
+import OrderItemContent from "../../order/OrderItemContent";
 
-export const metadata = {
-  title: "Menu",
-  description: "Browse Yo's Caribbean Kitchen menu and build a delivery order."
-};
-
-export const dynamic = "force-dynamic";
-
-export default async function MenuPage() {
-  const menuItems = await getMenuItems();
-
+export default function MenuItemPage({ params }) {
   return (
     <main className="site inner-site">
       <header className="topbar">
@@ -24,7 +14,7 @@ export default async function MenuPage() {
         <MobileNav />
       </header>
 
-      <OrderForm menuItems={menuItems} />
+      <OrderItemContent params={params} />
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { MapPin, Pencil } from "lucide-react";
 import { useState } from "react";
+import { getServiceAreaError, serviceAreaSummary } from "../order/service-area";
 
 export default function AddressForm({ user }) {
   const hasAddress = Boolean(user.addressLine1 && user.city && user.state && user.postalCode);
@@ -56,6 +57,7 @@ export default function AddressForm({ user }) {
     form.addressLine2,
     form.city && form.state && form.postalCode ? `${form.city}, ${form.state} ${form.postalCode}` : ""
   ].filter(Boolean);
+  const serviceAreaError = form.city || form.state ? getServiceAreaError(form) : null;
 
   if (!editing) {
     return (
@@ -113,8 +115,12 @@ export default function AddressForm({ user }) {
           value={form.deliveryNotes}
         />
       </label>
+      <div className={`service-area-note ${serviceAreaError ? "error" : "success"}`}>
+        <strong>Delivery area</strong>
+        <span>{serviceAreaError || `Delivery is available in ${serviceAreaSummary}`}</span>
+      </div>
       <div className="address-form-actions">
-        <button disabled={saving} type="submit">{saving ? "Saving..." : "Save delivery address"}</button>
+        <button disabled={saving || Boolean(serviceAreaError)} type="submit">{saving ? "Saving..." : "Save delivery address"}</button>
         {hasAddress && (
           <button className="address-cancel-button" disabled={saving} onClick={() => setEditing(false)} type="button">
             Cancel

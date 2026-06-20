@@ -12,7 +12,7 @@ export const metadata = {
   description: "Order Haitian and Caribbean comfort food from Yo's Caribbean Kitchen. Real food, real good.",
   openGraph: {
     title: "Yo's Caribbean Kitchen",
-    description: "Haitian and Caribbean comfort food for pickup and local order requests.",
+    description: "Haitian and Caribbean comfort food for local delivery order requests.",
     images: ["/pwa-icon.png"],
     siteName: "Yo's Caribbean Kitchen",
     type: "website"
@@ -33,12 +33,13 @@ export const viewport = {
   viewportFit: "cover"
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children, modal }) {
   return (
     <html lang="en">
       <body>
         <PwaAppChrome />
         {children}
+        {modal}
         <BagModal />
       </body>
     </html>

@@ -1,21 +1,6 @@
-// app/order/[slug]/page.js
-import Image from "next/image";
-import Link from "next/link";
-import MobileNav from "../../MobileNav";
-import OrderItemContent from "../OrderItemContent";
+import { redirect } from "next/navigation";
 
-export default function OrderItemPage({ params }) {
-  return (
-    <main className="site inner-site">
-      <header className="topbar">
-        <Link className="brand" href="/">
-          <Image src="/yos-logo.png" alt="Yo's Caribbean Kitchen logo" width={96} height={64} priority />
-          <span>Yo&apos;s Caribbean Kitchen</span>
-        </Link>
-        <MobileNav />
-      </header>
-
-      <OrderItemContent params={params} />
-    </main>
-  );
+export default async function OrderItemPage({ params }) {
+  const { slug } = await params;
+  redirect(`/menu/${slug}`);
 }

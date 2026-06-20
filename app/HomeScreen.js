@@ -22,11 +22,11 @@ function DishRail({ items, title, viewAllHref = "/menu" }) {
       <div className="app-dish-rail">
         <div>
           {items.map((item) => (
-          <Link className="app-dish-card" href={`/order/${item.slug}`} key={item.slug}>
+          <a className="app-dish-card" href={`/menu/${item.slug}`} key={item.slug}>
             <img src={item.image} alt={item.name} />
             <strong>{item.name}</strong>
             <span>{item.tag || item.nameInCreole}</span>
-          </Link>
+          </a>
         ))}
         </div>
 
@@ -66,10 +66,10 @@ export default function HomeScreen({ menuItems = [] }) {
                 {heroItem.tag || "Fresh comfort food"}
               </span>
               <h2>{heroItem.nameInCreole || heroItem.name}</h2>
-              <Link className="app-home-primary" href={`/order/${heroItem.slug}`}>
+              <a className="app-home-primary" href={`/menu/${heroItem.slug}`}>
                 <ShoppingBag size={16} />
                 Add to bag
-              </Link>
+              </a>
             </div>
             <img src={heroItem.image} alt={heroItem.name} width={240} height={220} />
           </section>

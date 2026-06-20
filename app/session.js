@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { ensureAccountBalanceSchema } from "./account-balance-schema";
 import { hasDatabaseConfig, query } from "./db";
 import { ensureStaffPositionSchema } from "./staff-schema";
 import { normalizeStaffPosition } from "./staff-positions";
@@ -18,6 +19,7 @@ function publicUser(user) {
   return {
     addressLine1: user.address_line1,
     addressLine2: user.address_line2,
+    accountBalance: Number(user.account_balance || 0),
     city: user.city,
     deliveryNotes: user.delivery_notes,
     email: user.email,
@@ -61,6 +63,7 @@ export async function getUserForSessionToken(token) {
   }
 
   await ensureStaffPositionSchema();
+  await ensureAccountBalanceSchema();
 
   const result = await query(
     `select
@@ -68,6 +71,7 @@ export async function getUserForSessionToken(token) {
        u.full_name,
        u.email,
        u.employee_id,
+       u.account_balance,
 	       u.phone,
 	       u.role,
 	       u.staff_position,

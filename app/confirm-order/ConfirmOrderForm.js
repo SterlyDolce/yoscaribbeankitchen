@@ -11,8 +11,9 @@ import {
   resolveBagLines,
   writeOrderBag
 } from "../order/order-bag";
+import { getServiceAreaError, serviceAreaSummary } from "../order/service-area";
 
-const orderModes = ["Pickup", "Delivery"];
+const orderMode = "Delivery";
 const paymentTypes = ["Pay in person", "Pay online"];
 const formatter = new Intl.NumberFormat("en-US", {
   currency: "USD",
@@ -22,7 +23,6 @@ const formatter = new Intl.NumberFormat("en-US", {
 export default function ConfirmOrderForm({ menuItems, user }) {
   const searchParams = useSearchParams();
   const [bag, setBag] = useState([]);
-  const [orderMode, setOrderMode] = useState(orderModes[0]);
   const [paymentType, setPaymentType] = useState(paymentTypes[0]);
   const [guestContact, setGuestContact] = useState({
     addressLine1: "",
@@ -86,9 +86,15 @@ export default function ConfirmOrderForm({ menuItems, user }) {
   const serviceFee = totalItems > 0 ? 1.75 : 0;
   const deliveryFee = totalItems > 0 && orderMode === "Delivery" ? 1.25 : 0;
   const tax = subtotal * 0.07;
-  const total = subtotal + tax + serviceFee + deliveryFee;
+  const accountBalance = user ? Number(user.accountBalance || 0) : 0;
+  const total = subtotal + tax + serviceFee + deliveryFee + accountBalance;
   const hasDeliveryAddress = Boolean(user?.addressLine1 && user?.city && user?.state && user?.postalCode);
   const needsDeliveryAddress = orderMode === "Delivery" && user && !hasDeliveryAddress;
+  const deliveryCustomer = user || guestContact;
+  const serviceAreaError = orderMode === "Delivery" && !needsDeliveryAddress
+    ? getServiceAreaError(deliveryCustomer)
+    : null;
+  const blocksDeliveryArea = Boolean(serviceAreaError);
   const needsGuestDetails = !user;
 
   function clearBag() {
@@ -126,6 +132,10 @@ export default function ConfirmOrderForm({ menuItems, user }) {
     setStatus(null);
 
     try {
+      if (blocksDeliveryArea) {
+        throw new Error(serviceAreaError);
+      }
+
       const payload = buildOrderPayload();
       const isOnlinePayment = paymentType === "Pay online";
       const response = await fetch(isOnlinePayment ? "/api/stripe/checkout" : "/api/orders", {
@@ -194,7 +204,7 @@ export default function ConfirmOrderForm({ menuItems, user }) {
                       <small>{formatMenuItemSelections(line.item, line.selections)}</small>
                     )}
                     {line.instructions && <small>{line.instructions}</small>}
-                    <Link href={`/order/${line.slug}`}>Customize another</Link>
+                    <Link href={`/menu/${line.slug}`}>Customize another</Link>
                   </div>
                   <div className="bag-line-actions">
                     <b>{formatter.format(line.quantity * getMenuItemUnitPrice(line.item, line.selections))}</b>
@@ -216,15 +226,9 @@ export default function ConfirmOrderForm({ menuItems, user }) {
             </div>
           </div>
 
-          <div className="confirm-choice-group">
-            <span>How do you want it?</span>
-            <div className="payment-switch" aria-label="Fulfillment method">
-              {orderModes.map((mode) => (
-                <button className={orderMode === mode ? "active" : ""} key={mode} onClick={() => setOrderMode(mode)} type="button">
-                  {mode}
-                </button>
-              ))}
-            </div>
+          <div className="delivery-only-note">
+            <strong>Delivery only</strong>
+            <span>Pickup is not available yet because Yo&apos;s does not have a customer pickup location.</span>
           </div>
 
           <div className="confirm-choice-group">
@@ -292,27 +296,38 @@ export default function ConfirmOrderForm({ menuItems, user }) {
             </div>
           )}
 
+          {orderMode === "Delivery" && (
+            <div className={`service-area-note ${serviceAreaError ? "error" : "success"}`}>
+              <strong>Delivery area</strong>
+              <span>
+                {serviceAreaError || `Delivery is available in ${serviceAreaSummary}`}
+              </span>
+            </div>
+          )}
+
           <div className="ticket-total" aria-label="Order total">
             <span>Items<strong>{totalItems}</strong></span>
             <span>Subtotal<strong>{formatter.format(subtotal)}</strong></span>
             <span>Tax<strong>{formatter.format(tax)}</strong></span>
             <span>Service Fee<strong>{formatter.format(serviceFee)}</strong></span>
             <span>Delivery Fee<strong>{formatter.format(deliveryFee)}</strong></span>
+            {accountBalance > 0 && <span>Back Balance<strong>{formatter.format(accountBalance)}</strong></span>}
             <span className="grand-total">Total<strong>{formatter.format(total)}</strong></span>
           </div>
 
-          {needsDeliveryAddress ? (
+          {needsDeliveryAddress || (user && blocksDeliveryArea) ? (
             <Link className="confirm-action-link" href="/account">
-              Add delivery address
+              {needsDeliveryAddress ? "Add delivery address" : "Update delivery address"}
             </Link>
           ) : (
-            <button className="place-order-button" disabled={totalItems === 0 || submitting} onClick={placeOrder} type="button">
+            <button className="place-order-button" disabled={totalItems === 0 || submitting || blocksDeliveryArea} onClick={placeOrder} type="button">
               <CheckCircle2 size={18} />
               {submitting ? "Sending..." : paymentType === "Pay online" ? "Pay with Stripe" : "Place order"}
             </button>
           )}
 
           {user ? <small>Ordering as {user.email}</small> : <small>Checking out as guest</small>}
+          {accountBalance > 0 && <small>Your back balance is included in this checkout.</small>}
           {orderMode === "Delivery" && hasDeliveryAddress && <small>Delivery to {user.addressLine1}, {user.city}</small>}
           <small>Payment preference: {paymentType}</small>
           {status && <p className={`form-status ${status.kind}`} role="status">{status.message}</p>}

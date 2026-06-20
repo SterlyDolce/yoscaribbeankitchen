@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureAccountBalanceSchema } from "../../../../../account-balance-schema";
 import { query } from "../../../../../db";
 import { ensureOrderPaymentTracking } from "../../../../../order/payment-schema";
 import { getStaffUserForRequest, requireAdmin } from "../../../admin-auth";
@@ -11,6 +12,7 @@ export async function GET(request, { params }) {
   const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
   await ensureOrderPaymentTracking();
+  await ensureAccountBalanceSchema();
 
   const { id } = await params;
   const staffUser = await getStaffUserForRequest(request);
@@ -29,6 +31,7 @@ export async function GET(request, { params }) {
        o.status,
        o.subtotal,
        o.tax,
+       o.account_balance_applied,
        o.total,
        o.created_at,
        o.updated_at,

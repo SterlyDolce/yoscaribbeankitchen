@@ -79,9 +79,8 @@ export default function AppLanding({ menuItems = [] }) {
   if (!ready) {
     return (
       <main className="site app-install-site">
-        <div className="app-install-card">
-          <img src="/pwa-icon.png" alt="" width={86} height={86} />
-          <p>Loading Yo&apos;s...</p>
+        <div className="app-loadin-screen">
+          <img src="/pwa-icon.png" alt="" width={100} height={100} />
         </div>
       </main>
     );

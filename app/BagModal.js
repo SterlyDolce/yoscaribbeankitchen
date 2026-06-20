@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   ShoppingBag,
-  Trash2,
   X
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -110,6 +109,20 @@ export default function BagModal() {
     setBag(nextBag);
   }
 
+  function updateLineQuantity(lineIndex, quantity) {
+    if (quantity <= 0) {
+      removeLine(lineIndex);
+      return;
+    }
+
+    const nextBag = bag.map((line, index) => (
+      index === lineIndex ? { ...line, quantity } : line
+    ));
+
+    writeOrderBag(nextBag);
+    setBag(nextBag);
+  }
+
   if (!open) return null;
 
   return (
@@ -150,13 +163,19 @@ export default function BagModal() {
                         <small>{formatMenuItemSelections(line.item, line.selections)}</small>
                       )}
                       {line.instructions && <small>{line.instructions}</small>}
-                      <Link href={`/order/${line.slug}`} onClick={() => setOpen(false)}>Customize another</Link>
+                      <Link href={`/menu/${line.slug}`} onClick={() => setOpen(false)}>Customize another</Link>
                     </div>
                     <div className="bag-line-actions">
                       <b>{formatter.format(line.quantity * getMenuItemUnitPrice(line.item, line.selections))}</b>
-                      <button aria-label={`Remove ${line.item.name}`} onClick={() => removeLine(line.lineIndex)} type="button">
-                        <Trash2 size={15} />
-                      </button>
+                      <div className="bag-quantity-control" aria-label={`${line.item.name} quantity`}>
+                        <button aria-label={`Decrease ${line.item.name} quantity`} onClick={() => updateLineQuantity(line.lineIndex, line.quantity - 1)} type="button">
+                          -
+                        </button>
+                        <strong>{line.quantity}</strong>
+                        <button aria-label={`Increase ${line.item.name} quantity`} onClick={() => updateLineQuantity(line.lineIndex, line.quantity + 1)} type="button">
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

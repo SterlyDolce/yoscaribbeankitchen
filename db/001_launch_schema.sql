@@ -7,6 +7,7 @@ create table if not exists public.users (
   phone text,
   employee_id text,
   hourly_rate numeric(10, 2) not null default 0,
+  account_balance numeric(10, 2) not null default 0,
   password_hash text,
   role text not null default 'customer',
   staff_position text,
@@ -18,6 +19,7 @@ alter table public.users add column if not exists password_hash text;
 alter table public.users add column if not exists role text not null default 'customer';
 alter table public.users add column if not exists employee_id text;
 alter table public.users add column if not exists hourly_rate numeric(10, 2) not null default 0;
+alter table public.users add column if not exists account_balance numeric(10, 2) not null default 0;
 alter table public.users add column if not exists staff_position text;
 alter table public.users add column if not exists address_line1 text;
 alter table public.users add column if not exists address_line2 text;
@@ -28,6 +30,10 @@ alter table public.users add column if not exists delivery_notes text;
 
 create unique index if not exists users_email_lower_key on public.users (lower(email));
 create unique index if not exists users_employee_id_lower_key on public.users (lower(employee_id)) where employee_id is not null;
+
+alter table public.users drop constraint if exists users_account_balance_nonnegative;
+alter table public.users
+add constraint users_account_balance_nonnegative check (account_balance >= 0);
 
 create table if not exists public.menu_items (
   id uuid primary key default gen_random_uuid(),
@@ -75,6 +81,7 @@ create table if not exists public.orders (
   status text not null default 'requested',
   subtotal numeric(10, 2) not null check (subtotal >= 0),
   tax numeric(10, 2) not null check (tax >= 0),
+  account_balance_applied numeric(10, 2) not null default 0 check (account_balance_applied >= 0),
   total numeric(10, 2) not null check (total >= 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -88,6 +95,11 @@ alter table public.orders add column if not exists guest_phone text;
 alter table public.orders add column if not exists payment_status text not null default 'unpaid';
 alter table public.orders add column if not exists stripe_session_id text;
 alter table public.orders add column if not exists stripe_payment_intent_id text;
+alter table public.orders add column if not exists account_balance_applied numeric(10, 2) not null default 0;
+
+alter table public.orders drop constraint if exists orders_account_balance_applied_nonnegative;
+alter table public.orders
+add constraint orders_account_balance_applied_nonnegative check (account_balance_applied >= 0);
 
 create index if not exists orders_user_id_created_at_idx on public.orders (user_id, created_at desc);
 create index if not exists orders_guest_email_created_at_idx on public.orders (lower(guest_email), created_at desc);

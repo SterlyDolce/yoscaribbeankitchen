@@ -145,7 +145,7 @@ export default function OrderForm({ menuItems }) {
             </div>
           ) : visibleItems.map((item) => (
             <article className="pos-item-card" key={item.name}>
-              <Link href={`/order/${item.slug}`}>
+              <Link href={`/menu/${item.slug}`}>
                 {/* <span className="item-tag">{item.tag}</span> */}
                 <img className="menu-item-image" src={item.image} alt={item.name} />
                 <strong>{item.name}</strong>
@@ -185,7 +185,7 @@ export default function OrderForm({ menuItems }) {
                       <small>{formatMenuItemSelections(line.item, line.selections)}</small>
                     )}
                     {line.instructions && <small>{line.instructions}</small>}
-                    <Link className="ticket-edit-link" href={`/order/${line.slug}`}>Customize another</Link>
+                    <Link className="ticket-edit-link" href={`/menu/${line.slug}`}>Customize another</Link>
                   </div>
                   <div className="ticket-line-actions">
                     <b>{formatter.format(line.quantity * getMenuItemUnitPrice(line.item, line.selections))}</b>

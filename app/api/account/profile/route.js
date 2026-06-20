@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasDatabaseConfig, query } from "../../../db";
+import { getServiceAreaError } from "../../../order/service-area";
 import { getUserForSessionToken, sessionCookieName } from "../../../session";
 
 function clean(value) {
@@ -33,6 +34,12 @@ export async function PATCH(request) {
     );
   }
 
+  const serviceAreaError = getServiceAreaError({ city, state });
+
+  if (serviceAreaError) {
+    return NextResponse.json({ message: serviceAreaError }, { status: 400 });
+  }
+
   const result = await query(
     `update public.users
      set address_line1 = $1,
@@ -42,7 +49,7 @@ export async function PATCH(request) {
          postal_code = $5,
          delivery_notes = $6
      where id = $7
-     returning id, full_name, email, phone, role, address_line1, address_line2, city, state, postal_code, delivery_notes`,
+     returning id, full_name, email, phone, role, account_balance, address_line1, address_line2, city, state, postal_code, delivery_notes`,
     [addressLine1, addressLine2, city, state, postalCode, deliveryNotes, user.id]
   );
 
@@ -52,6 +59,7 @@ export async function PATCH(request) {
     user: {
       addressLine1: updatedUser.address_line1,
       addressLine2: updatedUser.address_line2,
+      accountBalance: Number(updatedUser.account_balance || 0),
       city: updatedUser.city,
       deliveryNotes: updatedUser.delivery_notes,
       email: updatedUser.email,

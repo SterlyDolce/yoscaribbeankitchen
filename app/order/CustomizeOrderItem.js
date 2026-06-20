@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Minus, Plus, ShoppingBag, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   formatMenuItemSelections,
   getMenuItemCustomization,
@@ -23,6 +23,8 @@ export default function CustomizeOrderItem({ item, modal = false }) {
   const [quantity, setQuantity] = useState(1);
   const [instructions, setInstructions] = useState("");
   const [added, setAdded] = useState(false);
+  const [buttonAdded, setButtonAdded] = useState(false);
+  const buttonResetTimer = useRef(null);
 
   const customization = getMenuItemCustomization(item);
   const [selections, setSelections] = useState({});
@@ -44,6 +46,23 @@ export default function CustomizeOrderItem({ item, modal = false }) {
 
   const unitPrice = getMenuItemUnitPrice(item, selections);
 
+  useEffect(() => {
+    return () => {
+      if (buttonResetTimer.current) {
+        window.clearTimeout(buttonResetTimer.current);
+      }
+    };
+  }, []);
+
+  function resetAddedState() {
+    if (buttonResetTimer.current) {
+      window.clearTimeout(buttonResetTimer.current);
+    }
+
+    setAdded(false);
+    setButtonAdded(false);
+  }
+
   function toggleSelection(group, optionId) {
     setSelections((current) => {
       const selected = current[group.id] || [];
@@ -60,7 +79,7 @@ export default function CustomizeOrderItem({ item, modal = false }) {
       };
     });
 
-    setAdded(false);
+    resetAddedState();
   }
 
   function addItem() {
@@ -73,7 +92,19 @@ export default function CustomizeOrderItem({ item, modal = false }) {
       slug: item.slug
     });
 
+    if (buttonResetTimer.current) {
+      window.clearTimeout(buttonResetTimer.current);
+    }
+
     setAdded(true);
+    setButtonAdded(false);
+
+    window.requestAnimationFrame(() => {
+      setButtonAdded(true);
+      buttonResetTimer.current = window.setTimeout(() => {
+        setButtonAdded(false);
+      }, 650);
+    });
   }
 
   return (
@@ -90,7 +121,7 @@ export default function CustomizeOrderItem({ item, modal = false }) {
           onClick={() => router.back()}
           type="button"
         >
-          <X size={18} />
+          <X size={18} color="black" />
         </button>
       ) : (
         <Link className="customize-back-link" href="/menu">
@@ -207,11 +238,12 @@ export default function CustomizeOrderItem({ item, modal = false }) {
                 <button
                   type="button"
                   disabled={quantity === 1}
-                  onClick={() =>
+                  onClick={() => {
+                    resetAddedState();
                     setQuantity((value) =>
                       Math.max(1, value - 1)
-                    )
-                  }
+                    );
+                  }}
                 >
                   <Minus size={18} />
                 </button>
@@ -220,9 +252,10 @@ export default function CustomizeOrderItem({ item, modal = false }) {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setQuantity((value) => value + 1)
-                  }
+                  onClick={() => {
+                    resetAddedState();
+                    setQuantity((value) => value + 1);
+                  }}
                 >
                   <Plus size={18} />
                 </button>
@@ -241,7 +274,7 @@ export default function CustomizeOrderItem({ item, modal = false }) {
                 placeholder="Allergies, preparation notes, or requests..."
                 onChange={(event) => {
                   setInstructions(event.target.value);
-                  setAdded(false);
+                  resetAddedState();
                 }}
               />
 
@@ -259,14 +292,16 @@ export default function CustomizeOrderItem({ item, modal = false }) {
           )}
 
           <button
-            className="add-to-bag-button"
+            className={buttonAdded ? "add-to-bag-button is-added" : "add-to-bag-button"}
             type="button"
             disabled={!selectionsComplete}
             onClick={addItem}
           >
             <ShoppingBag size={19} />
 
-            {selectionsComplete
+            {buttonAdded
+              ? "Added to bag"
+              : selectionsComplete
               ? `Add ${quantity} to bag · ${formatter.format(
                   unitPrice * quantity
                 )}`

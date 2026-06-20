@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowRight, Clock3, CreditCard, Phone, ReceiptText, ShoppingBag, Truck, UserRound } from "lucide-react";
+import { ArrowRight, Clock3, Phone, ReceiptText, UserRound } from "lucide-react";
 import MobileNav from "../MobileNav";
 import { query } from "../db";
 import { ensureOrderPaymentTracking } from "../order/payment-schema";
@@ -122,6 +122,11 @@ export default async function AccountPage() {
               </span>
             )}
           </div>
+          <div className={user.accountBalance > 0 ? "account-balance-card has-balance" : "account-balance-card"}>
+            <span>Back balance</span>
+            <strong>{formatter.format(user.accountBalance)}</strong>
+            <small>{user.accountBalance > 0 ? "This can be collected with your next order." : "No balance due."}</small>
+          </div>
           <div className="account-panel-actions">
             <Link href="/menu">
               Start order
@@ -154,43 +159,35 @@ export default async function AccountPage() {
                 <Link href="/menu">Build your first order</Link>
               </div>
             ) : (
-              <div className="order-history">
-                {orders.map((order) => (
-                  <article key={order.id}>
-                    <div className="order-row-head">
-                      <Image
-                        src={order.items[0]?.image || "/yos-logo.png"}
-                        alt={order.items[0]?.name || "Yo's order"}
-                        width={78}
-                        height={78}
-                      />
-                      <div className="order-row-copy">
-                        <div className="order-history-top">
-                          <div>
-                            <strong>{order.items[0]?.name || `Order ${order.id.slice(0, 8)}`}</strong>
-                            <span>Order {order.id.slice(0, 8)} · {new Date(order.created_at).toLocaleString()}</span>
+              <div className="order-history-scroll" aria-label="Recent order history">
+                <div className="order-history">
+                  {orders.map((order) => (
+                    <Link className="order-summary-row" href={`/orders/${order.id}`} key={order.id}>
+                      <div className="order-row-head">
+                        <Image
+                          src={order.items[0]?.image || "/yos-logo.png"}
+                          alt={order.items[0]?.name || "Yo's order"}
+                          width={78}
+                          height={78}
+                        />
+                        <div className="order-row-copy">
+                          <div className="order-history-top">
+                            <div>
+                              <strong>{order.items[0]?.name || `Order ${order.id.slice(0, 8)}`}</strong>
+                              <span>Order {order.id.slice(0, 8)} · {new Date(order.created_at).toLocaleString()}</span>
+                            </div>
+                            <b>{formatter.format(Number(order.total))}</b>
                           </div>
-                          <b>{formatter.format(Number(order.total))}</b>
                         </div>
                       </div>
-                    </div>
-                    <div className="order-meta-row">
-	                      <span><Truck size={14} />{order.fulfillment_method}</span>
-	                      <span><CreditCard size={14} />{order.payment_preference} · {formatOrderStatus(order.payment_status)}</span>
-	                      <span><Clock3 size={14} />{formatOrderStatus(order.status)}</span>
-                    </div>
-                    {order.delivery_address && <p className="order-address">{order.delivery_address}</p>}
-                    <ul>
-                      {order.items.map((item, index) => (
-                        <li key={`${order.id}-${item.name}-${index}`}>
-                          <span><ShoppingBag size={14} />{item.quantity} x {item.name}</span>
-                          {item.instructions && <small>{item.instructions}</small>}
-                          <strong>{formatter.format(Number(item.lineTotal))}</strong>
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                ))}
+                      <div className="order-summary-footer">
+                        <span><Clock3 size={14} />{formatOrderStatus(order.status)}</span>
+                        <span>{order.items.length} item{order.items.length === 1 ? "" : "s"}</span>
+                        <ArrowRight size={18} />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </section>

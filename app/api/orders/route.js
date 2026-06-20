@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
+import { ensureAccountBalanceSchema } from "../../account-balance-schema";
 import { hasDatabaseConfig, query } from "../../db";
 import { getMenuItem } from "../../menu-data";
 import { formatDeliveryAddress, normalizeGuestContact, validateCustomer } from "../../order/guest-checkout";
 import { ensureOrderPaymentTracking } from "../../order/payment-schema";
-import { buildOrderLines, buildRequestedItems, calculateOrderTotals } from "../../order/order-pricing";
+import { buildOrderLines, buildRequestedItems, calculateOrderTotals, money } from "../../order/order-pricing";
+import { getServiceAreaError } from "../../order/service-area";
 import { getUserForSessionToken, sessionCookieName } from "../../session";
 import { notifyStaffForOrderStatus } from "../../staff-notifications";
 
-const fulfillmentMethods = new Set(["Pickup", "Delivery"]);
+const fulfillmentMethods = new Set(["Delivery"]);
 const paymentPreferences = new Set(["Pay in person", "Pay online"]);
 
 export async function POST(request) {
@@ -16,6 +18,7 @@ export async function POST(request) {
   }
 
   await ensureOrderPaymentTracking();
+  await ensureAccountBalanceSchema();
 
   const user = await getUserForSessionToken(request.cookies.get(sessionCookieName)?.value);
   const body = await request.json();
@@ -24,7 +27,7 @@ export async function POST(request) {
   const items = Array.isArray(body.items) ? body.items : [];
 
   if (!fulfillmentMethods.has(fulfillmentMethod) || !paymentPreferences.has(paymentPreference)) {
-    return NextResponse.json({ message: "Choose a valid order and payment option." }, { status: 400 });
+    return NextResponse.json({ message: "Delivery is the only available order option right now." }, { status: 400 });
   }
 
   const guestContact = normalizeGuestContact(body.guestContact);
@@ -42,6 +45,14 @@ export async function POST(request) {
       { message: "Add a delivery address to your account before placing a delivery order." },
       { status: 400 }
     );
+  }
+
+  if (fulfillmentMethod === "Delivery") {
+    const serviceAreaError = getServiceAreaError(customer);
+
+    if (serviceAreaError) {
+      return NextResponse.json({ message: serviceAreaError }, { status: 400 });
+    }
   }
 
   const requestedItems = buildRequestedItems(items);
@@ -72,12 +83,14 @@ export async function POST(request) {
 
   const orderLines = orderLinesResult.orderLines;
   const { subtotal, tax, total } = calculateOrderTotals(orderLines, fulfillmentMethod);
+  const accountBalanceApplied = user ? money(Number(user.accountBalance || 0)) : 0;
+  const orderTotal = money(total + accountBalanceApplied);
 
   try {
     const orderResult = await query(
       `insert into public.orders
-        (user_id, guest_name, guest_email, guest_phone, fulfillment_method, payment_preference, payment_status, delivery_address, subtotal, tax, total)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        (user_id, guest_name, guest_email, guest_phone, fulfillment_method, payment_preference, payment_status, delivery_address, subtotal, tax, account_balance_applied, total)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        returning id, status, total, created_at`,
       [
         user?.id || null,
@@ -90,7 +103,8 @@ export async function POST(request) {
         deliveryAddress,
         subtotal,
         tax,
-        total
+        accountBalanceApplied,
+        orderTotal
       ]
     );
     const order = orderResult.rows[0];
