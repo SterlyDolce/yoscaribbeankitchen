@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import BagButton from "./BagButton";
+import MenuSearchButton from "./MenuSearchButton";
 
 function isStandaloneDisplay() {
   return (
@@ -31,6 +32,7 @@ export default function PwaAppChrome() {
   const [standalone, setStandalone] = useState(false);
   const [appExperience, setAppExperience] = useState(false);
   const title = useMemo(() => getTitle(pathname || ""), [pathname]);
+  const isMenuPage = pathname === "/menu";
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
@@ -71,8 +73,10 @@ export default function PwaAppChrome() {
       </Link>
 
       <div className="pwa-app-actions">
-        <BagButton className="pwa-app-icon-button" />
+        {isMenuPage ? <MenuSearchButton /> : <BagButton className="pwa-app-icon-button" />}
       </div>
+
+      {isMenuPage && <BagButton className="pwa-floating-bag-button" />}
     </header>
   );
 }

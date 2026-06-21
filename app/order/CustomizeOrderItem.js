@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Minus, Plus, ShoppingBag, X } from "lucide-react";
+import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   formatMenuItemSelections,
@@ -18,8 +17,6 @@ const formatter = new Intl.NumberFormat("en-US", {
 });
 
 export default function CustomizeOrderItem({ item, modal = false }) {
-  const router = useRouter();
-
   const [quantity, setQuantity] = useState(1);
   const [instructions, setInstructions] = useState("");
   const [added, setAdded] = useState(false);
@@ -115,15 +112,7 @@ export default function CustomizeOrderItem({ item, modal = false }) {
           : "customize-order-page"
       }
     >
-      {modal ? (
-        <button
-          className="modal-customize-back-link"
-          onClick={() => router.back()}
-          type="button"
-        >
-          <X size={18} color="black" />
-        </button>
-      ) : (
+      {!modal && (
         <Link className="customize-back-link" href="/menu">
           <ArrowLeft size={18} />
           Back to menu
