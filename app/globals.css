@@ -109,6 +109,87 @@ html[data-yos-pwa] .site:not(.app-home-site):not(.app-install-site) {
   background: #fffaf1;
 }
 
+.install-app-prompt {
+  align-items: center;
+  background: rgba(255, 253, 248, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  bottom: 18px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.2);
+  color: var(--black);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  left: 50%;
+  max-width: min(640px, calc(100vw - 28px));
+  padding: 10px 10px 10px 12px;
+  position: fixed;
+  transform: translateX(-50%);
+  width: max-content;
+  z-index: 75;
+}
+
+html[data-yos-pwa] .install-app-prompt {
+  display: none;
+}
+
+.install-app-prompt-icon,
+.install-app-prompt-close,
+.install-app-prompt-action {
+  align-items: center;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.install-app-prompt-icon {
+  background: var(--black);
+  color: var(--gold);
+  height: 42px;
+  width: 42px;
+}
+
+.install-app-prompt div:nth-child(2) {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.install-app-prompt strong {
+  font-size: 0.9rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.install-app-prompt span {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.install-app-prompt-action {
+  background: var(--red);
+  color: var(--white);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 950;
+  min-height: 40px;
+  padding: 0 16px;
+}
+
+.install-app-prompt-close {
+  background: rgba(22, 21, 20, 0.08);
+  color: var(--black);
+  cursor: pointer;
+  height: 38px;
+  width: 38px;
+}
+
 .pwa-app-header {
   align-items: center;
   background:
@@ -3159,6 +3240,7 @@ html[data-yos-pwa] .order-filters {
   .menu-coming,
   .order-layout,
   .confirm-order-layout,
+  .checkout-choice-grid,
   .account-layout,
   .auth-layout {
     grid-template-columns: 1fr;
@@ -3297,6 +3379,36 @@ html[data-yos-pwa] .order-filters {
 @media (max-width: 560px) {
   .brand span {
     font-size: 0.95rem;
+  }
+
+  .install-app-prompt {
+    border-radius: 24px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    gap: 10px;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    padding: 10px;
+    width: calc(100vw - 24px);
+  }
+
+  .install-app-prompt-icon {
+    height: 40px;
+    width: 40px;
+  }
+
+  .install-app-prompt strong,
+  .install-app-prompt span {
+    white-space: normal;
+  }
+
+  .install-app-prompt-action {
+    min-height: 38px;
+    padding: 0 14px;
+  }
+
+  .install-app-prompt-close {
+    height: 32px;
+    margin-left: -6px;
+    width: 32px;
   }
 
   h1 {
@@ -3947,6 +4059,170 @@ html[data-yos-pwa] .order-filters {
 .app-install-actions {
   display: grid;
   margin-top: 22px;
+}
+
+.checkout-choice-site {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(244, 180, 0, 0.18), transparent 28%),
+    radial-gradient(circle at 88% 18%, rgba(215, 25, 32, 0.13), transparent 26%),
+    #fffaf1;
+}
+
+.checkout-choice-page {
+  display: grid;
+  gap: 24px;
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: clamp(28px, 5vw, 62px) clamp(14px, 4vw, 56px) 70px;
+}
+
+.checkout-choice-heading {
+  max-width: 760px;
+}
+
+.checkout-choice-heading h1 {
+  font-size: clamp(2.5rem, 8vw, 5.5rem);
+  letter-spacing: -0.06em;
+  line-height: 0.9;
+  margin: 8px 0 12px;
+}
+
+.checkout-choice-heading p:not(.eyebrow) {
+  color: var(--ink-soft);
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.checkout-choice-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.checkout-choice-card {
+  background: var(--white);
+  border: 1px solid rgba(22, 21, 20, 0.1);
+  border-radius: 28px;
+  box-shadow: 0 18px 55px rgba(22, 21, 20, 0.08);
+  display: grid;
+  gap: 18px;
+  min-height: 300px;
+  padding: clamp(18px, 3vw, 26px);
+}
+
+.checkout-choice-card > span {
+  align-items: center;
+  background: var(--black);
+  border-radius: 20px;
+  color: var(--gold);
+  display: inline-flex;
+  height: 58px;
+  justify-content: center;
+  width: 58px;
+}
+
+.checkout-choice-card h2 {
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  letter-spacing: -0.04em;
+  margin: 0 0 8px;
+}
+
+.checkout-choice-card p {
+  color: var(--ink-soft);
+  font-weight: 800;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.checkout-choice-card b {
+  align-items: center;
+  align-self: end;
+  display: inline-flex;
+  font-size: 0.92rem;
+  gap: 8px;
+  text-transform: uppercase;
+}
+
+.checkout-choice-card.primary-choice {
+  background: var(--black);
+  color: var(--white);
+}
+
+.checkout-choice-card.primary-choice p {
+  color: rgba(255, 253, 248, 0.72);
+}
+
+.checkout-choice-card.primary-choice > span {
+  background: var(--gold);
+  color: var(--black);
+}
+
+.checkout-choice-card.guest-choice {
+  background: #fff4d8;
+}
+
+@media (max-width: 560px) {
+  .checkout-choice-page {
+    gap: 16px;
+    padding: 18px 12px 36px;
+  }
+
+  .checkout-choice-heading h1 {
+    font-size: clamp(2.1rem, 10vw, 3rem);
+    letter-spacing: -0.055em;
+    margin-bottom: 10px;
+  }
+
+  .checkout-choice-heading p:not(.eyebrow) {
+    font-size: 0.98rem;
+    line-height: 1.45;
+  }
+
+  .checkout-choice-grid {
+    gap: 10px;
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-choice-card {
+    align-items: center;
+    border-radius: 20px;
+    box-shadow: 0 10px 28px rgba(22, 21, 20, 0.08);
+    gap: 12px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .checkout-choice-card > span {
+    border-radius: 16px;
+    height: 48px;
+    width: 48px;
+  }
+
+  .checkout-choice-card h2 {
+    font-size: 1.08rem;
+    letter-spacing: -0.025em;
+    margin-bottom: 3px;
+  }
+
+  .checkout-choice-card p {
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  .checkout-choice-card b {
+    font-size: 0;
+  }
+
+  .checkout-choice-card b span {
+    display: none;
+  }
+
+  .checkout-choice-card b svg {
+    height: 22px;
+    width: 22px;
+  }
 }
 
 .confirm-order-page {

@@ -4,6 +4,7 @@ import { ArrowRight, Clock, MapPin, Menu, Phone, ShoppingBag, Sparkles } from "l
 import MobileNav from "./MobileNav";
 import { restaurantInfo } from "./site-data";
 import FloatingIconBackground from "./FloatingIconBackground";
+import InstallAppPrompt from "./InstallAppPrompt";
 
 export default function RestaurantPage({ menuError, menuItems, variant }) {
   return (
@@ -15,6 +16,7 @@ export default function RestaurantPage({ menuError, menuItems, variant }) {
         </Link>
         <MobileNav />
       </header>
+      <InstallAppPrompt />
 
       <section className="bold-hero" id="home">
         <div className="bold-feature">

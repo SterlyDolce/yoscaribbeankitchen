@@ -13,12 +13,23 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function AuthPage() {
+function getSafeRedirectPath(value) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
+    return "/account";
+  }
+
+  return value;
+}
+
+export default async function AuthPage({ searchParams }) {
+  const params = await searchParams;
+  const next = getSafeRedirectPath(params?.next);
+  const mode = params?.mode === "signup" ? "signup" : "signin";
   const cookieStore = await cookies();
   const user = await getUserForSessionToken(cookieStore.get(sessionCookieName)?.value);
 
   if (user) {
-    redirect("/account");
+    redirect(next);
   }
 
   return (
@@ -37,7 +48,7 @@ export default async function AuthPage() {
           <p className="eyebrow">Account Access</p>
           <p>Save your profile and track order requests.</p>
         </div>
-        <AuthForm />
+        <AuthForm initialMode={mode} next={next} />
       </section>
     </main>
   );

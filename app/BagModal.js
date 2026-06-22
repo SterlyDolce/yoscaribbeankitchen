@@ -194,7 +194,7 @@ export default function BagModal() {
 
         <div className="bag-modal-footer">
           <button className="clear-ticket-button" disabled={totalItems === 0} onClick={clearBag} type="button">Clear</button>
-          <Link className={totalItems === 0 ? "bag-checkout-link disabled-link" : "bag-checkout-link"} href="/confirm-order" onClick={() => setOpen(false)}>
+          <Link className={totalItems === 0 ? "bag-checkout-link disabled-link" : "bag-checkout-link"} href="/checkout" onClick={() => setOpen(false)}>
             Checkout
             <ArrowRight size={18} />
           </Link>

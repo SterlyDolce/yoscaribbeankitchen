@@ -4,12 +4,21 @@ import { Mail, Phone, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function AuthForm() {
+function getSafeRedirectPath(value) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
+    return "/account";
+  }
+
+  return value;
+}
+
+export default function AuthForm({ initialMode = "signin", next = "/account" }) {
   const router = useRouter();
-  const [mode, setMode] = useState("signin");
+  const [mode, setMode] = useState(initialMode === "signup" ? "signup" : "signin");
   const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const isSignup = mode === "signup";
+  const redirectPath = getSafeRedirectPath(next);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -47,7 +56,7 @@ export default function AuthForm() {
           : `Signed in as ${result.user.email}.`
       });
       form.reset();
-      router.push("/account");
+      router.push(redirectPath);
       router.refresh();
     } catch (error) {
       setStatus({ kind: "error", message: error.message });
