@@ -339,6 +339,31 @@ async function sendNativePush(messages) {
   );
 }
 
+export async function notifyStaffUserTest(staffUserId, title = "Yo's test notification", body = "If you can see this, staff notifications are working.") {
+  await ensureStaffPushSchema();
+
+  const result = await query(
+    `select device_push_token, platform
+     from public.staff_push_tokens
+     where staff_user_id = $1
+       and push_service = 'native'`,
+    [staffUserId]
+  );
+
+  const messages = result.rows.map((row) => ({
+    body,
+    orderId: "test",
+    platform: row.platform,
+    status: "test",
+    title,
+    token: row.device_push_token
+  }));
+
+  await sendNativePush(messages);
+
+  return messages.length;
+}
+
 export async function notifyStaffForOrderStatus(orderId, status, title, body) {
   await ensureStaffPushSchema();
 
