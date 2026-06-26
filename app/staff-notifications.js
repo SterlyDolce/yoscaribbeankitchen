@@ -79,7 +79,9 @@ export async function notifyStaffForOrderStatus(orderId, status, title, body) {
     .filter((row) => canSeeStatus(row.staff_position, status))
     .map((row) => ({
       body,
+      channelId: "orders",
       data: { orderId, status },
+      priority: "high",
       sound: "default",
       title,
       to: row.expo_push_token
