@@ -16,13 +16,17 @@ export async function POST(request) {
 
   const body = await request.json();
   const token = String(body.token || "").trim();
-  const platform = String(body.platform || "").trim() || null;
+  const platform = String(body.platform || "").trim().toLowerCase();
 
-  if (!token.startsWith("ExponentPushToken[") && !token.startsWith("ExpoPushToken[")) {
-    return NextResponse.json({ message: "Choose a valid Expo push token." }, { status: 400 });
+  if (!token) {
+    return NextResponse.json({ message: "Choose a valid device push token." }, { status: 400 });
   }
 
-  await registerStaffPushToken(user.id, token, platform);
+  if (!["android", "ios"].includes(platform)) {
+    return NextResponse.json({ message: "Choose a valid push token platform." }, { status: 400 });
+  }
+
+  await registerStaffPushToken(user.id, token, platform, "native");
 
   return NextResponse.json({ ok: true });
 }
