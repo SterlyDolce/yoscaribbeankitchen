@@ -147,6 +147,8 @@ async function sendApnsPush(message) {
   try {
     const config = getApnsConfig();
     const body = String(message.body || "New order update");
+    const customData = message.data && typeof message.data === "object" ? message.data : {};
+    const subtitle = message.subtitle ? String(message.subtitle) : null;
     const title = String(message.title || "Yo's Kitchen Staff");
     const interruptionLevel = process.env.APNS_INTERRUPTION_LEVEL;
 
@@ -202,6 +204,7 @@ async function sendApnsPush(message) {
         aps: {
           alert: {
             body,
+            ...(subtitle ? { subtitle } : {}),
             title
           },
           badge: 1,
@@ -209,6 +212,7 @@ async function sendApnsPush(message) {
           "thread-id": "orders",
           ...(interruptionLevel ? { "interruption-level": interruptionLevel } : {})
         },
+        ...customData,
         orderId: message.orderId,
         status: message.status
       }));
@@ -307,6 +311,11 @@ async function sendFcmPush(message) {
             priority: "HIGH"
           },
           data: {
+            ...(message.data && typeof message.data === "object"
+              ? Object.fromEntries(
+                  Object.entries(message.data).map(([key, value]) => [key, String(value)])
+                )
+              : {}),
             orderId: String(message.orderId),
             status: String(message.status)
           },
@@ -354,8 +363,15 @@ async function sendNativePush(messages) {
   );
 }
 
-export async function notifyStaffUserTest(staffUserId, title = "Yo's test notification", body = "If you can see this, staff notifications are working.") {
+export async function notifyStaffUserTest(staffUserId, options = {}) {
   await ensureStaffPushSchema();
+
+  const body = String(options.body || "If you can see this, staff notifications are working.");
+  const data = options.data && typeof options.data === "object" ? options.data : {};
+  const orderId = String(options.orderId || "test");
+  const status = String(options.status || "test");
+  const subtitle = options.subtitle ? String(options.subtitle) : null;
+  const title = String(options.title || "Yo's test notification");
 
   const result = await query(
     `select device_push_token, platform
@@ -367,9 +383,11 @@ export async function notifyStaffUserTest(staffUserId, title = "Yo's test notifi
 
   const messages = result.rows.map((row) => ({
     body,
-    orderId: "test",
+    data,
+    orderId,
     platform: row.platform,
-    status: "test",
+    status,
+    subtitle,
     title,
     token: row.device_push_token
   }));

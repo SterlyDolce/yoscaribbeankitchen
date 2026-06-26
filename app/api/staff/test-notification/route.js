@@ -15,9 +15,19 @@ export async function POST(request) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const title = String(body.title || "Yo's test notification").trim();
-  const message = String(body.body || "If you can see this, staff notifications are working.").trim();
-  const result = await notifyStaffUserTest(user.id, title, message);
+  const data = body.data && typeof body.data === "object" ? body.data : {};
+  const result = await notifyStaffUserTest(user.id, {
+    body: String(body.body || "If you can see this, staff notifications are working.").trim(),
+    data: {
+      source: "staff-test-notification",
+      sentAt: new Date().toISOString(),
+      ...data
+    },
+    orderId: String(body.orderId || "test-rich"),
+    status: String(body.status || "test"),
+    subtitle: body.subtitle ? String(body.subtitle).trim() : null,
+    title: String(body.title || "Yo's test notification").trim()
+  });
 
   return NextResponse.json({
     ok: true,
