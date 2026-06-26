@@ -7,6 +7,10 @@ const globalForStaffNotifications = globalThis;
 const APNS_PRODUCTION_HOST = "https://api.push.apple.com";
 const APNS_SANDBOX_HOST = "https://api.sandbox.push.apple.com";
 const FCM_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const moneyFormatter = new Intl.NumberFormat("en-US", {
+  currency: "USD",
+  style: "currency"
+});
 
 export async function ensureStaffPushSchema() {
   if (globalForStaffNotifications.yosStaffPushSchemaReady) return;
@@ -407,13 +411,48 @@ export async function notifyStaffForOrderStatus(orderId, status, title, body) {
   await ensureStaffPushSchema();
 
   const orderResult = await query(
-    `select delivery_time
-     from public.orders
-     where id = $1
+    `select
+       o.delivery_time,
+       o.fulfillment_method,
+       o.payment_preference,
+       o.payment_status,
+       o.total,
+       coalesce(u.full_name, o.guest_name, 'Guest') as customer_name,
+       coalesce(sum(oi.quantity), 0)::int as item_count
+     from public.orders o
+     left join public.users u on u.id = o.user_id
+     left join public.order_items oi on oi.order_id = o.id
+     where o.id = $1
+     group by o.id, u.full_name
      limit 1`,
     [orderId]
   );
-  const deliveryTime = orderResult.rows[0]?.delivery_time || "";
+  const order = orderResult.rows[0] || {};
+  const deliveryTime = order.delivery_time || "";
+  const itemCount = Number(order.item_count || 0);
+  const total = Number(order.total || 0);
+  const totalLabel = Number.isFinite(total) && total > 0 ? moneyFormatter.format(total) : "";
+  const customerName = order.customer_name || "Guest";
+  const detailParts = [
+    customerName,
+    itemCount > 0 ? `${itemCount} item${itemCount === 1 ? "" : "s"}` : "",
+    totalLabel,
+    order.payment_status ? String(order.payment_status).replace(/_/g, " ") : "",
+    deliveryTime ? `delivery ${deliveryTime}` : ""
+  ].filter(Boolean);
+  const notificationBody = detailParts.length > 0 ? `${body} ${detailParts.join(" · ")}.` : body;
+  const subtitle = deliveryTime
+    ? `Delivery time: ${deliveryTime}`
+    : order.fulfillment_method || null;
+  const notificationData = {
+    customerName,
+    deliveryTime,
+    fulfillmentMethod: order.fulfillment_method || "",
+    itemCount: String(itemCount),
+    paymentPreference: order.payment_preference || "",
+    paymentStatus: order.payment_status || "",
+    total: totalLabel
+  };
 
   const result = await query(
     `select
@@ -429,12 +468,13 @@ export async function notifyStaffForOrderStatus(orderId, status, title, body) {
   const messages = result.rows
     .filter((row) => canSeeStatus(row.staff_position, status))
     .map((row) => ({
-      body,
-      data: { deliveryTime },
+      body: notificationBody,
+      data: notificationData,
       deliveryTime,
       orderId,
       platform: row.platform,
       status,
+      subtitle,
       title,
       token: row.device_push_token
     }));
