@@ -28,6 +28,7 @@ export async function GET(request, { params }) {
 	       o.payment_preference,
 	       o.payment_status,
 	       o.delivery_address,
+       o.delivery_time,
        o.status,
        o.subtotal,
        o.tax,

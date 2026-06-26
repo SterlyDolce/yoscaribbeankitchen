@@ -16,13 +16,16 @@ export async function POST(request) {
 
   const body = await request.json().catch(() => ({}));
   const data = body.data && typeof body.data === "object" ? body.data : {};
+  const deliveryTime = String(body.deliveryTime ?? data.deliveryTime ?? "").trim();
   const result = await notifyStaffUserTest(user.id, {
     body: String(body.body || "If you can see this, staff notifications are working.").trim(),
     data: {
       source: "staff-test-notification",
       sentAt: new Date().toISOString(),
-      ...data
+      ...data,
+      deliveryTime
     },
+    deliveryTime,
     orderId: String(body.orderId || "test-rich"),
     status: String(body.status || "test"),
     subtitle: body.subtitle ? String(body.subtitle).trim() : null,

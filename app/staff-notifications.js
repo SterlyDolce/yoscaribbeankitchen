@@ -200,8 +200,8 @@ async function sendApnsPush(message) {
         resolve({ error: error.message, ok: false, platform: "ios" });
       });
 
-      request.end(JSON.stringify({
-        aps: {
+    request.end(JSON.stringify({
+      aps: {
           alert: {
             body,
             ...(subtitle ? { subtitle } : {}),
@@ -210,12 +210,13 @@ async function sendApnsPush(message) {
           badge: 1,
           sound: "default",
           "thread-id": "orders",
-          ...(interruptionLevel ? { "interruption-level": interruptionLevel } : {})
-        },
-        ...customData,
-        orderId: message.orderId,
-        status: message.status
-      }));
+        ...(interruptionLevel ? { "interruption-level": interruptionLevel } : {})
+      },
+      ...customData,
+      deliveryTime: message.deliveryTime || "",
+      orderId: message.orderId,
+      status: message.status
+    }));
     });
   } catch (error) {
     console.error("Unable to send APNs push notification.", error);
@@ -316,6 +317,7 @@ async function sendFcmPush(message) {
                   Object.entries(message.data).map(([key, value]) => [key, String(value)])
                 )
               : {}),
+            deliveryTime: String(message.deliveryTime || ""),
             orderId: String(message.orderId),
             status: String(message.status)
           },
@@ -384,6 +386,7 @@ export async function notifyStaffUserTest(staffUserId, options = {}) {
   const messages = result.rows.map((row) => ({
     body,
     data,
+    deliveryTime: String(options.deliveryTime || data.deliveryTime || ""),
     orderId,
     platform: row.platform,
     status,
@@ -403,6 +406,15 @@ export async function notifyStaffUserTest(staffUserId, options = {}) {
 export async function notifyStaffForOrderStatus(orderId, status, title, body) {
   await ensureStaffPushSchema();
 
+  const orderResult = await query(
+    `select delivery_time
+     from public.orders
+     where id = $1
+     limit 1`,
+    [orderId]
+  );
+  const deliveryTime = orderResult.rows[0]?.delivery_time || "";
+
   const result = await query(
     `select
        t.device_push_token,
@@ -418,6 +430,8 @@ export async function notifyStaffForOrderStatus(orderId, status, title, body) {
     .filter((row) => canSeeStatus(row.staff_position, status))
     .map((row) => ({
       body,
+      data: { deliveryTime },
+      deliveryTime,
       orderId,
       platform: row.platform,
       status,

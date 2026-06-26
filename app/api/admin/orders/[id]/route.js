@@ -67,6 +67,7 @@ async function getOrder(id, visibleStatuses = null) {
 	       o.payment_preference,
 	       o.payment_status,
 	       o.delivery_address,
+       o.delivery_time,
        o.status,
        o.subtotal,
        o.tax,

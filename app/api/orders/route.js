@@ -24,6 +24,7 @@ export async function POST(request) {
   const body = await request.json();
   const fulfillmentMethod = body.fulfillmentMethod;
   const paymentPreference = body.paymentPreference;
+  const deliveryTime = String(body.deliveryTime || "").trim();
   const items = Array.isArray(body.items) ? body.items : [];
 
   if (!fulfillmentMethods.has(fulfillmentMethod) || !paymentPreferences.has(paymentPreference)) {
@@ -89,8 +90,8 @@ export async function POST(request) {
   try {
     const orderResult = await query(
       `insert into public.orders
-        (user_id, guest_name, guest_email, guest_phone, fulfillment_method, payment_preference, payment_status, delivery_address, subtotal, tax, account_balance_applied, total)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        (user_id, guest_name, guest_email, guest_phone, fulfillment_method, payment_preference, payment_status, delivery_address, delivery_time, subtotal, tax, account_balance_applied, total)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        returning id, status, total, created_at`,
       [
         user?.id || null,
@@ -101,6 +102,7 @@ export async function POST(request) {
         paymentPreference,
         paymentPreference === "Pay online" ? "pending" : "pay_in_person",
         deliveryAddress,
+        deliveryTime,
         subtotal,
         tax,
         accountBalanceApplied,

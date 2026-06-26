@@ -78,6 +78,7 @@ create table if not exists public.orders (
   stripe_session_id text,
   stripe_payment_intent_id text,
   delivery_address text,
+  delivery_time text not null default '',
   status text not null default 'requested',
   subtotal numeric(10, 2) not null check (subtotal >= 0),
   tax numeric(10, 2) not null check (tax >= 0),
@@ -88,6 +89,7 @@ create table if not exists public.orders (
 );
 
 alter table public.orders add column if not exists delivery_address text;
+alter table public.orders add column if not exists delivery_time text not null default '';
 alter table public.orders alter column user_id drop not null;
 alter table public.orders add column if not exists guest_name text;
 alter table public.orders add column if not exists guest_email text;
@@ -95,6 +97,7 @@ alter table public.orders add column if not exists guest_phone text;
 alter table public.orders add column if not exists payment_status text not null default 'unpaid';
 alter table public.orders add column if not exists stripe_session_id text;
 alter table public.orders add column if not exists stripe_payment_intent_id text;
+alter table public.orders add column if not exists delivery_time text not null default '';
 alter table public.orders add column if not exists account_balance_applied numeric(10, 2) not null default 0;
 
 alter table public.orders drop constraint if exists orders_account_balance_applied_nonnegative;
