@@ -144,68 +144,79 @@ function createApnsJwt(config) {
 }
 
 async function sendApnsPush(message) {
-  const config = getApnsConfig();
-  const body = String(message.body || "New order update");
-  const title = String(message.title || "Yo's Kitchen Staff");
-  const interruptionLevel = process.env.APNS_INTERRUPTION_LEVEL;
+  try {
+    const config = getApnsConfig();
+    const body = String(message.body || "New order update");
+    const title = String(message.title || "Yo's Kitchen Staff");
+    const interruptionLevel = process.env.APNS_INTERRUPTION_LEVEL;
 
-  if (!config) {
-    console.error("Unable to send APNs push notification. APNS_KEY_ID, APNS_TEAM_ID, APNS_BUNDLE_ID, and APNS_PRIVATE_KEY are required.");
-    return;
-  }
-
-  const client = http2.connect(config.host);
-
-  await new Promise((resolve) => {
-    const request = client.request({
-      ":method": "POST",
-      ":path": `/3/device/${message.token}`,
-      authorization: `bearer ${createApnsJwt(config)}`,
-      "apns-priority": "10",
-      "apns-push-type": "alert",
-      "apns-topic": config.bundleId
-    });
-
-    let responseBody = "";
-    let statusCode = null;
-
-    request.setEncoding("utf8");
-    request.on("response", (headers) => {
-      statusCode = headers[":status"];
-    });
-    request.on("data", (chunk) => {
-      responseBody += chunk;
-    });
-    request.on("end", () => {
-      client.close();
-
-      if (statusCode < 200 || statusCode >= 300) {
-        console.error("APNs push failed.", statusCode, responseBody);
-      }
-
-      resolve();
-    });
-    request.on("error", (error) => {
-      client.close();
+    if (!config) {
+      const error = "APNS_KEY_ID, APNS_TEAM_ID, APNS_BUNDLE_ID, and APNS_PRIVATE_KEY are required.";
       console.error("Unable to send APNs push notification.", error);
-      resolve();
-    });
+      return { error, ok: false, platform: "ios" };
+    }
 
-    request.end(JSON.stringify({
-      aps: {
-        alert: {
-          body,
-          title
+    const client = http2.connect(config.host);
+
+    return await new Promise((resolve) => {
+      const request = client.request({
+        ":method": "POST",
+        ":path": `/3/device/${message.token}`,
+        authorization: `bearer ${createApnsJwt(config)}`,
+        "apns-priority": "10",
+        "apns-push-type": "alert",
+        "apns-topic": config.bundleId
+      });
+
+      let responseBody = "";
+      let statusCode = null;
+
+      request.setEncoding("utf8");
+      request.on("response", (headers) => {
+        statusCode = headers[":status"];
+      });
+      request.on("data", (chunk) => {
+        responseBody += chunk;
+      });
+      request.on("end", () => {
+        client.close();
+
+        if (statusCode < 200 || statusCode >= 300) {
+          console.error("APNs push failed.", statusCode, responseBody);
+        }
+
+        resolve({
+          body: responseBody,
+          ok: statusCode >= 200 && statusCode < 300,
+          platform: "ios",
+          statusCode
+        });
+      });
+      request.on("error", (error) => {
+        client.close();
+        console.error("Unable to send APNs push notification.", error);
+        resolve({ error: error.message, ok: false, platform: "ios" });
+      });
+
+      request.end(JSON.stringify({
+        aps: {
+          alert: {
+            body,
+            title
+          },
+          badge: 1,
+          sound: "default",
+          "thread-id": "orders",
+          ...(interruptionLevel ? { "interruption-level": interruptionLevel } : {})
         },
-        badge: 1,
-        sound: "default",
-        "thread-id": "orders",
-        ...(interruptionLevel ? { "interruption-level": interruptionLevel } : {})
-      },
-      orderId: message.orderId,
-      status: message.status
-    }));
-  });
+        orderId: message.orderId,
+        status: message.status
+      }));
+    });
+  } catch (error) {
+    console.error("Unable to send APNs push notification.", error);
+    return { error: error.message, ok: false, platform: "ios" };
+  }
 }
 
 async function getFcmAccessToken() {
@@ -278,7 +289,7 @@ async function sendFcmPush(message) {
 
   if (!projectId || !accessToken) {
     console.error("Unable to send FCM push notification. FCM_PROJECT_ID, FCM_CLIENT_EMAIL, and FCM_PRIVATE_KEY are required.");
-    return;
+    return { error: "FCM_PROJECT_ID, FCM_CLIENT_EMAIL, and FCM_PRIVATE_KEY are required.", ok: false, platform: "android" };
   }
 
   try {
@@ -316,14 +327,18 @@ async function sendFcmPush(message) {
     if (!response.ok) {
       const body = await response.text();
       console.error("FCM push failed.", response.status, body);
+      return { body, ok: false, platform: "android", statusCode: response.status };
     }
+
+    return { ok: true, platform: "android", statusCode: response.status };
   } catch (error) {
     console.error("Unable to send FCM push notification.", error);
+    return { error: error.message, ok: false, platform: "android" };
   }
 }
 
 async function sendNativePush(messages) {
-  await Promise.all(
+  return Promise.all(
     messages.map((message) => {
       if (message.platform === "ios") {
         return sendApnsPush(message);
@@ -334,7 +349,7 @@ async function sendNativePush(messages) {
       }
 
       console.error("Unable to send push notification for unknown platform.", message.platform);
-      return Promise.resolve();
+      return Promise.resolve({ error: "Unknown platform.", ok: false, platform: message.platform });
     })
   );
 }
@@ -359,9 +374,12 @@ export async function notifyStaffUserTest(staffUserId, title = "Yo's test notifi
     token: row.device_push_token
   }));
 
-  await sendNativePush(messages);
+  const results = await sendNativePush(messages);
 
-  return messages.length;
+  return {
+    results,
+    tokenCount: messages.length
+  };
 }
 
 export async function notifyStaffForOrderStatus(orderId, status, title, body) {

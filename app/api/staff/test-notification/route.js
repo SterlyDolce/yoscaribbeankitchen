@@ -17,10 +17,10 @@ export async function POST(request) {
   const body = await request.json().catch(() => ({}));
   const title = String(body.title || "Yo's test notification").trim();
   const message = String(body.body || "If you can see this, staff notifications are working.").trim();
-  const tokenCount = await notifyStaffUserTest(user.id, title, message);
+  const result = await notifyStaffUserTest(user.id, title, message);
 
   return NextResponse.json({
     ok: true,
-    tokenCount
+    ...result
   });
 }
