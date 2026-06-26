@@ -145,6 +145,9 @@ function createApnsJwt(config) {
 
 async function sendApnsPush(message) {
   const config = getApnsConfig();
+  const body = String(message.body || "New order update");
+  const title = String(message.title || "Yo's Kitchen Staff");
+  const interruptionLevel = process.env.APNS_INTERRUPTION_LEVEL;
 
   if (!config) {
     console.error("Unable to send APNs push notification. APNS_KEY_ID, APNS_TEAM_ID, APNS_BUNDLE_ID, and APNS_PRIVATE_KEY are required.");
@@ -191,10 +194,13 @@ async function sendApnsPush(message) {
     request.end(JSON.stringify({
       aps: {
         alert: {
-          body: message.body,
-          title: message.title
+          body,
+          title
         },
-        sound: "default"
+        badge: 1,
+        sound: "default",
+        "thread-id": "orders",
+        ...(interruptionLevel ? { "interruption-level": interruptionLevel } : {})
       },
       orderId: message.orderId,
       status: message.status
@@ -281,8 +287,11 @@ async function sendFcmPush(message) {
         message: {
           android: {
             notification: {
-              channel_id: "orders",
-              sound: "default"
+              channel_id: "orders-high",
+              default_vibrate_timings: true,
+              notification_priority: "PRIORITY_MAX",
+              sound: "default",
+              visibility: "PUBLIC"
             },
             priority: "HIGH"
           },
