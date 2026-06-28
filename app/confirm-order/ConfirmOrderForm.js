@@ -61,11 +61,13 @@ export default function ConfirmOrderForm({ menuItems, user }) {
     if (payment === "success") {
       writeOrderBag([]);
       setBag([]);
+      if (orderId) {
+        window.location.replace(`/order-success?order=${encodeURIComponent(orderId)}`);
+        return;
+      }
       setStatus({
         kind: "success",
-        message: orderId
-          ? `Payment received for order ${orderId.slice(0, 8)}. Yo's will confirm timing.`
-          : "Payment received. Yo's will confirm timing."
+        message: "Payment received. Yo's will confirm timing."
       });
     }
 
@@ -96,12 +98,6 @@ export default function ConfirmOrderForm({ menuItems, user }) {
     : null;
   const blocksDeliveryArea = Boolean(serviceAreaError);
   const needsGuestDetails = !user;
-
-  function clearBag() {
-    writeOrderBag([]);
-    setBag([]);
-    setStatus(null);
-  }
 
   function removeLine(lineIndex) {
     const nextBag = bag.filter((_, index) => index !== lineIndex);
@@ -157,11 +153,9 @@ export default function ConfirmOrderForm({ menuItems, user }) {
         return;
       }
 
-      clearBag();
-      setStatus({
-        kind: "success",
-        message: `Order ${result.order.id.slice(0, 8)} received. Yo's will confirm timing.`
-      });
+      writeOrderBag([]);
+      setBag([]);
+      window.location.href = `/order-success?order=${encodeURIComponent(result.order.id)}`;
     } catch (error) {
       setStatus({ kind: "error", message: error.message });
     } finally {

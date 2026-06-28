@@ -176,7 +176,7 @@ export async function POST(request) {
       "customer_email": customer.email,
       "metadata[order_id]": order.id,
       mode: "payment",
-      success_url: `${baseUrl}/confirm-order?order=${order.id}&payment=success`,
+      success_url: `${baseUrl}/order-success?order=${order.id}`,
       cancel_url: `${baseUrl}/confirm-order?payment=cancelled`
     };
 
