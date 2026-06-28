@@ -8,6 +8,7 @@ import MobileNav from "../../MobileNav";
 import { query } from "../../db";
 import { ensureOrderPaymentTracking } from "../../order/payment-schema";
 import { getUserForSessionToken, sessionCookieName } from "../../session";
+import WebPushButton from "../../WebPushButton";
 import OrderProgressTracker from "./OrderProgressTracker";
 
 export const dynamic = "force-dynamic";
@@ -146,6 +147,8 @@ export default async function OrderDetailsPage({ params }) {
             initialStatus={order.status}
             orderId={order.id}
           />
+
+          <WebPushButton />
 
           {order.delivery_address && (
             <div className="order-detail-address">

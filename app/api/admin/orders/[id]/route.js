@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ensureAccountBalanceSchema } from "../../../../account-balance-schema";
+import { notifyCustomerForOrderStatus } from "../../../../customer-notifications";
 import { query, transaction } from "../../../../db";
 import { ensureOrderAuditSchema, recordOrderEvent } from "../../../../order/audit-schema";
 import { ensureOrderPaymentTracking } from "../../../../order/payment-schema";
@@ -237,6 +238,7 @@ export async function PATCH(request, { params }) {
       "Order moved",
       `Order ${id.slice(0, 8)} is now ${status.replace(/_/g, " ")}.`
     );
+    await notifyCustomerForOrderStatus(id, status);
   }
   return NextResponse.json({ order });
 }
