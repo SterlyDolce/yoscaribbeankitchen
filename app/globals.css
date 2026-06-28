@@ -2987,6 +2987,105 @@ html[data-yos-pwa] .order-filters {
   white-space: pre-line;
 }
 
+.order-tracker {
+  background: #fbfaf6;
+  border: 1px solid rgba(22, 21, 20, 0.1);
+  border-radius: 20px;
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.order-tracker.cancelled {
+  background: rgba(215, 25, 32, 0.08);
+  border-color: rgba(215, 25, 32, 0.18);
+}
+
+.order-tracker-heading {
+  align-items: start;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.order-tracker-heading h2 {
+  font-size: clamp(1.35rem, 4vw, 2.1rem);
+  line-height: 1;
+  margin: 2px 0 0;
+  text-transform: capitalize;
+}
+
+.order-tracker-heading > span {
+  background: rgba(39, 137, 75, 0.12);
+  border-radius: 999px;
+  color: #19733f;
+  font-weight: 950;
+  padding: 9px 12px;
+  white-space: nowrap;
+}
+
+.order-tracker-rail {
+  background: rgba(22, 21, 20, 0.1);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.order-tracker-rail span {
+  background: var(--red);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  transition: width 240ms ease;
+}
+
+.order-tracker.cancelled .order-tracker-rail span {
+  background: var(--black);
+}
+
+.order-tracker-steps {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.order-tracker-steps li {
+  color: var(--ink-soft);
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 950;
+  gap: 7px;
+  min-width: 0;
+}
+
+.order-tracker-steps li > span {
+  align-items: center;
+  background: rgba(22, 21, 20, 0.1);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  display: inline-flex;
+  font-size: 0.78rem;
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+
+.order-tracker-steps li.complete {
+  color: var(--black);
+}
+
+.order-tracker-steps li.complete > span {
+  background: var(--red);
+  color: var(--white);
+}
+
+.order-tracker-steps strong {
+  overflow-wrap: anywhere;
+}
+
 .order-detail-items {
   display: grid;
   gap: 12px;
@@ -3517,6 +3616,19 @@ html[data-yos-pwa] .order-filters {
 
   .order-detail-heading {
     display: grid;
+  }
+
+  .order-tracker-heading {
+    display: grid;
+  }
+
+  .order-tracker-heading > span {
+    justify-self: start;
+    white-space: normal;
+  }
+
+  .order-tracker-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .order-detail-item b {

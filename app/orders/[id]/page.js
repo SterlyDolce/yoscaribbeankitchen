@@ -8,6 +8,7 @@ import MobileNav from "../../MobileNav";
 import { query } from "../../db";
 import { ensureOrderPaymentTracking } from "../../order/payment-schema";
 import { getUserForSessionToken, sessionCookieName } from "../../session";
+import OrderProgressTracker from "./OrderProgressTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ async function getOrder(orderId, userId) {
        payment_preference,
        payment_status,
        delivery_address,
+       ready_time,
        status,
        subtotal,
        tax,
@@ -138,6 +140,12 @@ export default async function OrderDetailsPage({ params }) {
             <span><CreditCard size={16} />{order.payment_preference} · {formatOrderStatus(order.payment_status)}</span>
             <span><Clock3 size={16} />{formatOrderStatus(order.status)}</span>
           </div>
+
+          <OrderProgressTracker
+            initialReadyTime={order.ready_time || ""}
+            initialStatus={order.status}
+            orderId={order.id}
+          />
 
           {order.delivery_address && (
             <div className="order-detail-address">
