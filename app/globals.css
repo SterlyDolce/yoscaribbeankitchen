@@ -3611,8 +3611,8 @@ html[data-yos-pwa] .order-filters {
   }
 
   .account-layout {
-    gap: 18px;
-    padding: 18px 18px 42px;
+    gap: 30px;
+    padding: 22px 22px 48px;
   }
 
   .account-panel {
@@ -3620,27 +3620,23 @@ html[data-yos-pwa] .order-filters {
     border: 0;
     border-radius: 0;
     box-shadow: none;
-    gap: 18px;
+    gap: 22px;
     grid-template-columns: 1fr;
     overflow: visible;
     padding: 0;
   }
 
   .profile-card-top {
+    align-items: start;
     color: var(--black);
-    gap: 14px;
+    display: grid;
+    gap: 0;
     margin: 0;
-    padding: 8px 0 2px;
+    padding: 8px 0 0;
   }
 
   .profile-avatar {
-    background: var(--black);
-    border: 0;
-    border-radius: 18px;
-    box-shadow: none;
-    font-size: 1.8rem;
-    height: 64px;
-    width: 64px;
+    display: none;
   }
 
   .profile-title .eyebrow {
@@ -3649,48 +3645,62 @@ html[data-yos-pwa] .order-filters {
 
   .profile-title h2 {
     color: var(--black);
-    font-size: 1.55rem;
-    letter-spacing: -0.03em;
-    line-height: 1.02;
+    font-size: clamp(2.15rem, 12vw, 3.2rem);
+    letter-spacing: -0.055em;
+    line-height: 0.92;
   }
 
   .profile-contact {
     background: transparent;
     border: 0;
-    border-bottom: 1px solid rgba(22, 21, 20, 0.1);
     border-radius: 0;
     box-shadow: none;
-    gap: 10px;
+    gap: 8px;
     margin-top: 0;
-    padding: 0 0 16px;
+    padding: 0;
   }
 
   .profile-contact span {
-    color: var(--black);
+    color: var(--ink-soft);
     font-size: 0.94rem;
     font-weight: 850;
   }
 
   .profile-contact svg {
     box-sizing: content-box;
+    color: var(--red);
     padding: 0;
   }
 
   .account-balance-card {
     background: transparent;
     border: 0;
-    border-bottom: 1px solid rgba(22, 21, 20, 0.1);
     border-radius: 0;
-    gap: 3px;
-    padding: 0 0 16px;
+    display: grid;
+    gap: 2px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0;
+  }
+
+  .account-balance-card span {
+    align-self: end;
+    grid-column: 1;
   }
 
   .account-balance-card strong {
-    font-size: 1.9rem;
+    align-self: end;
+    font-size: 1.35rem;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    text-align: right;
+  }
+
+  .account-balance-card small {
+    grid-column: 1;
   }
 
   .account-panel-actions {
-    gap: 10px;
+    gap: 12px;
     grid-template-columns: 1fr;
   }
 
@@ -3702,12 +3712,13 @@ html[data-yos-pwa] .order-filters {
   }
 
   .account-panel button {
-    background: rgba(215, 25, 32, 0.1);
+    background: transparent;
     color: var(--red);
+    min-height: 34px;
   }
 
   .account-main {
-    gap: 18px;
+    gap: 32px;
   }
 
   .profile-panel,
@@ -3722,13 +3733,25 @@ html[data-yos-pwa] .order-filters {
   .address-edit-card {
     background: transparent;
     border: 0;
-    border-bottom: 1px solid rgba(22, 21, 20, 0.1);
     border-radius: 0;
-    padding: 0 0 18px;
+    gap: 14px;
+    padding: 0;
   }
 
   .address-edit-icon {
-    border-radius: 16px;
+    background: transparent;
+    color: var(--red);
+    height: auto;
+    width: auto;
+  }
+
+  .address-edit-card small,
+  .orders-heading .eyebrow {
+    color: var(--red);
+  }
+
+  .address-edit-card strong {
+    font-size: 1rem;
   }
 
   .orders-heading {
@@ -3759,9 +3782,9 @@ html[data-yos-pwa] .order-filters {
   }
 
   .order-summary-row {
-    border-bottom: 1px solid rgba(22, 21, 20, 0.1);
+    border-bottom: 0;
     flex: initial;
-    padding: 14px 0;
+    padding: 16px 0;
   }
 
   .orders-heading,
@@ -3770,8 +3793,22 @@ html[data-yos-pwa] .order-filters {
     flex-direction: column;
   }
 
-  .order-summary-row {
-    padding: 6px 0 12px;
+  .order-row-head {
+    gap: 12px;
+  }
+
+  .order-row-head img {
+    border-radius: 12px;
+    height: 58px;
+    width: 58px;
+  }
+
+  .order-summary-footer {
+    justify-content: flex-start;
+  }
+
+  .order-summary-footer > svg {
+    margin-left: auto;
   }
 
   .order-detail-heading,
