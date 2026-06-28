@@ -61,7 +61,7 @@ export async function POST(request) {
   const user = await getUserForSessionToken(request.cookies.get(sessionCookieName)?.value);
   const body = await request.json();
   const fulfillmentMethod = body.fulfillmentMethod;
-  const readyTime = String(body.readyTime || body.deliveryTime || "").trim();
+  const readyTime = String(body.readyTime || body.deliveryTime || "ASAP").trim();
   const items = Array.isArray(body.items) ? body.items : [];
 
   if (!fulfillmentMethods.has(fulfillmentMethod)) {
