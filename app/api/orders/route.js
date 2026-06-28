@@ -24,7 +24,7 @@ export async function POST(request) {
   const body = await request.json();
   const fulfillmentMethod = body.fulfillmentMethod;
   const paymentPreference = body.paymentPreference;
-  const readyTime = String(body.readyTime || body.deliveryTime || "ASAP").trim();
+  const readyTime = String(body.readyTime || body.deliveryTime || "5-10 mins").trim();
   const items = Array.isArray(body.items) ? body.items : [];
 
   if (!fulfillmentMethods.has(fulfillmentMethod) || !paymentPreferences.has(paymentPreference)) {
