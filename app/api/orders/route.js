@@ -4,6 +4,7 @@ import { hasDatabaseConfig, query } from "../../db";
 import { getMenuItem } from "../../menu-data";
 import { formatDeliveryAddress, normalizeGuestContact, validateCustomer } from "../../order/guest-checkout";
 import { ensureOrderPaymentTracking } from "../../order/payment-schema";
+import { normalizeReadyTime } from "../../order/ready-time";
 import { buildOrderLines, buildRequestedItems, calculateOrderTotals, money } from "../../order/order-pricing";
 import { getServiceAreaError } from "../../order/service-area";
 import { getUserForSessionToken, sessionCookieName } from "../../session";
@@ -24,7 +25,7 @@ export async function POST(request) {
   const body = await request.json();
   const fulfillmentMethod = body.fulfillmentMethod;
   const paymentPreference = body.paymentPreference;
-  const readyTime = String(body.readyTime || body.deliveryTime || "5-10 mins").trim();
+  const readyTime = normalizeReadyTime(body.readyTime, body.deliveryTime);
   const items = Array.isArray(body.items) ? body.items : [];
 
   if (!fulfillmentMethods.has(fulfillmentMethod) || !paymentPreferences.has(paymentPreference)) {
