@@ -2,6 +2,8 @@ alter table public.orders add column if not exists payment_status text not null 
 alter table public.orders add column if not exists stripe_session_id text;
 alter table public.orders add column if not exists stripe_payment_intent_id text;
 alter table public.orders add column if not exists delivery_time text not null default '';
+alter table public.orders add column if not exists ready_time text not null default '';
+update public.orders set ready_time = delivery_time where ready_time = '' and delivery_time <> '';
 
 create unique index if not exists orders_stripe_session_id_key
 on public.orders (stripe_session_id)

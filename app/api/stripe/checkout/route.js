@@ -61,7 +61,7 @@ export async function POST(request) {
   const user = await getUserForSessionToken(request.cookies.get(sessionCookieName)?.value);
   const body = await request.json();
   const fulfillmentMethod = body.fulfillmentMethod;
-  const deliveryTime = String(body.deliveryTime || "").trim();
+  const readyTime = String(body.readyTime || body.deliveryTime || "").trim();
   const items = Array.isArray(body.items) ? body.items : [];
 
   if (!fulfillmentMethods.has(fulfillmentMethod)) {
@@ -128,7 +128,7 @@ export async function POST(request) {
   try {
     const orderResult = await query(
       `insert into public.orders
-        (user_id, guest_name, guest_email, guest_phone, fulfillment_method, payment_preference, payment_status, delivery_address, delivery_time, status, subtotal, tax, account_balance_applied, total)
+        (user_id, guest_name, guest_email, guest_phone, fulfillment_method, payment_preference, payment_status, delivery_address, ready_time, status, subtotal, tax, account_balance_applied, total)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        returning id`,
       [
@@ -140,7 +140,7 @@ export async function POST(request) {
         "Pay online",
         "pending",
         deliveryAddress,
-        deliveryTime,
+        readyTime,
         "payment_pending",
         totals.subtotal,
         totals.tax,

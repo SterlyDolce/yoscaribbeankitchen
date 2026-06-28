@@ -217,7 +217,7 @@ async function sendApnsPush(message) {
         ...(interruptionLevel ? { "interruption-level": interruptionLevel } : {})
       },
       ...customData,
-      deliveryTime: message.deliveryTime || "",
+      readyTime: message.readyTime || "",
       orderId: message.orderId,
       status: message.status
     }));
@@ -321,7 +321,7 @@ async function sendFcmPush(message) {
                   Object.entries(message.data).map(([key, value]) => [key, String(value)])
                 )
               : {}),
-            deliveryTime: String(message.deliveryTime || ""),
+            readyTime: String(message.readyTime || ""),
             orderId: String(message.orderId),
             status: String(message.status)
           },
@@ -375,6 +375,7 @@ export async function notifyStaffUserTest(staffUserId, options = {}) {
   const body = String(options.body || "If you can see this, staff notifications are working.");
   const data = options.data && typeof options.data === "object" ? options.data : {};
   const orderId = String(options.orderId || "test");
+  const readyTime = String(options.readyTime || options.deliveryTime || data.readyTime || data.deliveryTime || "");
   const status = String(options.status || "test");
   const subtitle = options.subtitle ? String(options.subtitle) : null;
   const title = String(options.title || "Yo's test notification");
@@ -390,9 +391,9 @@ export async function notifyStaffUserTest(staffUserId, options = {}) {
   const messages = result.rows.map((row) => ({
     body,
     data,
-    deliveryTime: String(options.deliveryTime || data.deliveryTime || ""),
     orderId,
     platform: row.platform,
+    readyTime,
     status,
     subtitle,
     title,
@@ -413,6 +414,7 @@ export async function notifyStaffForOrderStatus(orderId, status, title, body) {
   const orderResult = await query(
     `select
        o.delivery_time,
+       o.ready_time,
        o.fulfillment_method,
        o.payment_preference,
        o.payment_status,
@@ -428,7 +430,7 @@ export async function notifyStaffForOrderStatus(orderId, status, title, body) {
     [orderId]
   );
   const order = orderResult.rows[0] || {};
-  const deliveryTime = order.delivery_time || "";
+  const readyTime = order.ready_time || order.delivery_time || "";
   const itemCount = Number(order.item_count || 0);
   const total = Number(order.total || 0);
   const totalLabel = Number.isFinite(total) && total > 0 ? moneyFormatter.format(total) : "";
@@ -438,19 +440,21 @@ export async function notifyStaffForOrderStatus(orderId, status, title, body) {
     itemCount > 0 ? `${itemCount} item${itemCount === 1 ? "" : "s"}` : "",
     totalLabel,
     order.payment_status ? String(order.payment_status).replace(/_/g, " ") : "",
-    deliveryTime ? `delivery ${deliveryTime}` : ""
+    readyTime ? `ready ${readyTime}` : ""
   ].filter(Boolean);
-  const notificationBody = detailParts.length > 0 ? `${body} ${detailParts.join(" · ")}.` : body;
-  const subtitle = deliveryTime
-    ? `Delivery time: ${deliveryTime}`
+  const notificationBody = status === "requested" && readyTime
+    ? `${customerName} placed an order, it should be ready by ${readyTime}.`
+    : detailParts.length > 0 ? `${body} ${detailParts.join(" · ")}.` : body;
+  const subtitle = readyTime
+    ? `Ready by ${readyTime}`
     : order.fulfillment_method || null;
   const notificationData = {
     customerName,
-    deliveryTime,
     fulfillmentMethod: order.fulfillment_method || "",
     itemCount: String(itemCount),
     paymentPreference: order.payment_preference || "",
     paymentStatus: order.payment_status || "",
+    readyTime,
     total: totalLabel
   };
 
@@ -470,9 +474,9 @@ export async function notifyStaffForOrderStatus(orderId, status, title, body) {
     .map((row) => ({
       body: notificationBody,
       data: notificationData,
-      deliveryTime,
       orderId,
       platform: row.platform,
+      readyTime,
       status,
       subtitle,
       title,
