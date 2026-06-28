@@ -439,11 +439,14 @@ export async function notifyStaffForOrderStatus(orderId, status, title, body) {
     customerName,
     itemCount > 0 ? `${itemCount} item${itemCount === 1 ? "" : "s"}` : "",
     totalLabel,
-    order.payment_status ? String(order.payment_status).replace(/_/g, " ") : "",
-    readyTime ? `ready ${readyTime}` : ""
+    order.payment_status ? String(order.payment_status).replace(/_/g, " ") : ""
   ].filter(Boolean);
-  const notificationBody = status === "requested" && readyTime
-    ? `${customerName} placed an order, it should be ready by ${readyTime}.`
+  const requestedDetails = [
+    itemCount > 0 ? `${itemCount} item${itemCount === 1 ? "" : "s"}` : "",
+    totalLabel
+  ].filter(Boolean);
+  const notificationBody = status === "requested"
+    ? `${customerName} placed an order${requestedDetails.length > 0 ? ` · ${requestedDetails.join(" · ")}` : ""}.`
     : detailParts.length > 0 ? `${body} ${detailParts.join(" · ")}.` : body;
   const subtitle = readyTime
     ? `Ready by ${readyTime}`
