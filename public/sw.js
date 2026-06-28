@@ -29,11 +29,15 @@ self.addEventListener("push", (event) => {
       // Show the generic notification if the status fetch fails.
     }
 
+    const existingNotifications = await self.registration.getNotifications({ tag: notification.tag });
+    existingNotifications.forEach((existingNotification) => existingNotification.close());
+
     await self.registration.showNotification(notification.title, {
       badge: "/pwa-icon.png",
       body: notification.body,
       data: { url: notification.url },
       icon: notification.icon,
+      renotify: false,
       tag: notification.tag
     });
   })());
