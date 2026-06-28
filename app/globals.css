@@ -3498,8 +3498,41 @@ html[data-yos-pwa] .order-filters {
 }
 
 @media (max-width: 560px) {
+  .site.inner-site {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .topbar {
+    background: rgba(255, 253, 248, 0.96);
+    border-bottom: 1px solid rgba(22, 21, 20, 0.08);
+    color: var(--black);
+    min-height: 64px;
+    padding: 8px 12px;
+    position: sticky;
+    top: 0;
+  }
+
+  .brand {
+    color: var(--black);
+    gap: 8px;
+  }
+
+  .brand img {
+    height: 42px;
+    width: 62px;
+  }
+
   .brand span {
     font-size: 0.95rem;
+  }
+
+  .menu-toggle {
+    background: rgba(22, 21, 20, 0.08);
+    border-radius: 999px;
+    color: var(--black);
+    height: 40px;
+    width: 40px;
   }
 
   .install-app-prompt {
@@ -3640,6 +3673,32 @@ html[data-yos-pwa] .order-filters {
     display: grid;
   }
 
+  .order-detail-layout {
+    gap: 12px;
+    padding: 14px 12px 34px;
+  }
+
+  .order-detail-card {
+    border-radius: 22px;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .order-detail-heading h1 {
+    font-size: clamp(1.9rem, 10vw, 3rem);
+  }
+
+  .order-detail-meta span {
+    border-radius: 12px;
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .order-tracker {
+    border-radius: 18px;
+    padding: 14px;
+  }
+
   .order-tracker-heading {
     display: grid;
   }
@@ -3650,7 +3709,33 @@ html[data-yos-pwa] .order-filters {
   }
 
   .order-tracker-steps {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .order-tracker-steps li {
+    align-items: center;
+    border-left: 2px solid rgba(22, 21, 20, 0.1);
+    display: flex;
+    gap: 10px;
+    margin-left: 12px;
+    min-height: 36px;
+    padding: 0 0 8px 14px;
+    position: relative;
+  }
+
+  .order-tracker-steps li:last-child {
+    border-left-color: transparent;
+    padding-bottom: 0;
+  }
+
+  .order-tracker-steps li > span {
+    left: -14px;
+    position: absolute;
+  }
+
+  .order-tracker-steps li.complete {
+    border-left-color: var(--red);
   }
 
   .order-detail-item b {
@@ -3683,10 +3768,10 @@ html[data-yos-pwa] .order-filters {
   }
 
   .pos-menu-panel {
-    gap: 14px;
+    gap: 12px;
     min-width: 0;
     overflow-x: clip;
-    padding: 0;
+    padding: 0 12px calc(112px + env(safe-area-inset-bottom));
   }
 
   .menu-app-topbar {
@@ -3720,8 +3805,9 @@ html[data-yos-pwa] .order-filters {
 
   .menu-section-heading h1,
   .menu-section-heading h2 {
-    font-size: 1.35rem;
-    text-transform: uppercase;
+    font-size: 1.55rem;
+    letter-spacing: -0.03em;
+    text-transform: none;
   }
 
   .menu-section-heading small {
@@ -3730,16 +3816,28 @@ html[data-yos-pwa] .order-filters {
   }
 
   .pos-categories {
-    margin: 0;
+    background: rgba(255, 250, 241, 0.96);
+    margin: 0 -12px;
     max-width: 100%;
     min-width: 0;
     overflow-x: auto;
-    padding: 0;
+    padding: 4px 12px 8px;
+    position: sticky;
+    top: 64px;
+    z-index: 4;
   }
 
   .pos-categories button {
-    box-shadow: 0 5px 14px rgba(22, 21, 20, 0.06);
+    box-shadow: none;
     flex: 0 0 auto;
+    min-height: 36px;
+    padding: 0 12px 0 8px;
+  }
+
+  .pos-categories button img {
+    border-radius: 999px;
+    height: 22px;
+    width: 22px;
   }
 
   .menu-swipe-banner {
@@ -3871,43 +3969,69 @@ html[data-yos-pwa] .order-filters {
   }
 
   .pos-item-grid {
-    gap: 10px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    grid-template-columns: 1fr;
     min-width: 0;
     width: 100%;
   }
 
   .pos-item-card {
+    border: 0;
+    border-bottom: 1px solid rgba(22, 21, 20, 0.08);
+    border-radius: 0;
+    box-shadow: none;
     min-height: auto;
     min-width: 0;
   }
 
   .pos-item-card>a {
+    align-items: center;
+    display: grid;
+    gap: 14px;
+    grid-template-columns: minmax(0, 1fr) 108px;
     min-height: 0;
+    padding: 14px 0;
   }
 
   .menu-card-image {
-    min-height: 132px;
+    border-radius: 14px;
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 96px;
+    width: 108px;
   }
 
   .menu-item-image {
-    max-height: 128px;
-    padding: 10px;
+    height: 96px;
+    max-height: none;
+    object-fit: cover;
+    padding: 0;
+    width: 108px;
   }
 
   .menu-favorite-button {
-    height: 28px;
-    left: 8px;
-    top: 8px;
-    width: 28px;
+    background: rgba(255, 253, 248, 0.94);
+    height: 30px;
+    left: auto;
+    right: 8px;
+    top: 22px;
+    width: 30px;
   }
 
   .menu-card-copy {
-    padding: 0 9px 10px;
+    gap: 5px;
+    grid-column: 1;
+    grid-row: 1;
+    padding: 0;
   }
 
   .pos-item-card strong {
-    font-size: 0.82rem;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  .pos-item-card em {
+    font-size: 0.84rem;
   }
 
   .pos-item-card small {
@@ -3916,7 +4040,7 @@ html[data-yos-pwa] .order-filters {
   }
 
   .pos-item-card b {
-    font-size: 0.8rem;
+    font-size: 0.94rem;
   }
 
   .quantity-control {
@@ -4861,7 +4985,7 @@ html[data-yos-pwa] .order-filters {
 @media (max-width: 640px) {
   .confirm-order-page {
     gap: 14px;
-    padding: 16px 12px calc(24px + env(safe-area-inset-bottom));
+    padding: 16px 12px calc(112px + env(safe-area-inset-bottom));
   }
 
   .confirm-order-heading h1 {
@@ -4881,14 +5005,23 @@ html[data-yos-pwa] .order-filters {
   }
 
   .confirm-order-card {
-    border-radius: 18px;
+    border-radius: 20px;
     gap: 13px;
     padding: 14px;
   }
 
   .confirm-checkout-card {
-    position: static;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    bottom: 0;
+    box-shadow: 0 -16px 38px rgba(22, 21, 20, 0.16);
+    left: 0;
+    max-height: min(86dvh, 760px);
+    overflow: auto;
+    padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
+    position: sticky;
     top: auto;
+    z-index: 8;
   }
 
   .confirm-section-header {
@@ -4951,18 +5084,49 @@ html[data-yos-pwa] .order-filters {
   }
 
   .confirm-checkout-card .ticket-total {
+    background: #fbfaf6;
+    border-radius: 16px;
     gap: 8px;
     padding: 12px;
   }
 
+  .confirm-checkout-card .ticket-total span {
+    font-size: 0.92rem;
+  }
+
+  .confirm-checkout-card .ticket-total .grand-total {
+    font-size: 1.18rem;
+  }
+
   .confirm-action-link,
   .confirm-checkout-card .place-order-button {
+    border-radius: 999px;
     min-height: 52px;
     width: 100%;
   }
 
   .confirm-checkout-card small {
     line-height: 1.35;
+  }
+
+  .order-success-page {
+    min-height: auto;
+    padding: 18px 12px 34px;
+  }
+
+  .order-success-card {
+    border-radius: 22px;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .order-success-card h1 {
+    font-size: clamp(2.2rem, 14vw, 3.5rem);
+  }
+
+  .order-success-primary,
+  .order-success-secondary {
+    border-radius: 999px;
   }
 
   .bag-modal-backdrop {
